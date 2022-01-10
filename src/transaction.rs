@@ -189,7 +189,7 @@ impl SigningProcess {
                 continue;
             };
 
-            if self.own_public_key != pk || !wallet.public_keys.contains(&pk) {
+            if self.own_public_key != pk && !wallet.public_keys.contains(&pk) {
                 println!("🤨 This is not a valid signer of this MultiSig.");
                 continue;
             }
