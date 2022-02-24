@@ -8,7 +8,7 @@ pub struct Secret {}
 
 impl Secret {
     const SIZE: usize = 32;
-    const SUPPORTED_PURPOSE: usize = 1;
+    const SUPPORTED_PURPOSE: usize = 0x42000001;
     const ENCRYPTION_SALT_SIZE: usize = 16;
     const ENCRYPTION_CHECKSUM_SIZE: usize = 4;
     const ENCRYPTION_CHECKSUM_SIZE_V3: usize = 2;
