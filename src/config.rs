@@ -22,14 +22,16 @@ impl Config {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct State {
-    pub secret: String,
+
+pub struct StateNew {
+    pub secret_list: Vec<String>,
     pub transaction: Option<String>,
     pub partial_signatures: Option<Vec<String>>,
-    pub commitments: Vec<Commitment>,
+    pub commitments_list: Vec<CommitmentList>,
 }
 
-impl State {
+
+impl StateNew {
     pub fn from_file(filename: &str) -> MultiSigResult<Self> {
         Ok(toml::from_str(&fs::read_to_string(filename)?)?)
     }
@@ -41,7 +43,32 @@ impl State {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct State {
+    pub secret: String,
+    pub transaction: Option<String>,
+    pub partial_signatures: Option<Vec<String>>,
+    pub commitments: Vec<Commitment>,
+}
+
+// impl State {
+//     pub fn from_file(filename: &str) -> MultiSigResult<Self> {
+//         Ok(toml::from_str(&fs::read_to_string(filename)?)?)
+//     }
+
+//     pub fn to_file(&self, filename: &str) -> MultiSigResult<()> {
+//         fs::write(filename, toml::to_string_pretty(self)?)?;
+//         Ok(())
+//     }
+// }
+
+#[derive(Serialize, Deserialize)]
 pub struct Commitment {
     pub public_key: String,
     pub commitment: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CommitmentList {
+    pub public_key: String,
+    pub commitment_list: Vec<String>,
 }

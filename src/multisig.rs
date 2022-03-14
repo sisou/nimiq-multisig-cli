@@ -2,8 +2,8 @@ use base64;
 use hex::FromHex;
 use itertools::Itertools;
 use nimiq_hash::Blake2bHasher;
-use nimiq_keys::{Address, PrivateKey, PublicKey, KeyPair};
-use nimiq_keys::multisig::{RandomSecret, Commitment, PartialSignature};
+use nimiq_keys::{Address, PrivateKey, PublicKey}; //, KeyPair
+// use nimiq_keys::multisig::{RandomSecret, Commitment, PartialSignature};
 use nimiq_utils::merkle::compute_root_from_content;
 use std::io;
 use std::io::Write;
@@ -15,11 +15,20 @@ use crate::public_key::DelinearizedPublicKey;
 use crate::utils::{read_bool, read_line, read_usize};
 
 pub struct MultiSig {
-    secret: Vec<u8>,
-    private_key: PrivateKey,
+    pub secret: Vec<u8>,
+    pub private_key: PrivateKey,
     pub num_signers: usize,
     pub public_keys: Vec<PublicKey>,
 }
+
+
+// impl std::fmt::Display for MultiSig {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(f, "(value secret: {:?}, value private_key: {:?}), value num_signers: {}, value public_keys: {:?}", 
+//         self.secret, self.private_key, self.num_signers, self.public_keys)
+//     }
+// }
+
 
 impl MultiSig {
     pub fn public_key(&self) -> PublicKey {
@@ -85,6 +94,8 @@ impl MultiSig {
             num_signers,
             public_keys,
         };
+
+        // println!("{}", wallet);
 
         println!("🤓 Do you want to store everything in a configuration file for easier access (your private key is encrypted)? yes/[no]");
         let store = read_bool()?;
@@ -182,10 +193,10 @@ impl MultiSig {
         Ok(address)
     }
 
-    pub fn partially_sign(&self, public_keys: &[PublicKey], secret: &RandomSecret, commitments: &[Commitment], data: &[u8]) -> PartialSignature {
-        let kp = KeyPair::from(self.private_key.clone());
-        kp.partial_sign(public_keys, secret, commitments, data).0
-    }
+    // pub fn partially_sign(&self, public_keys: &[PublicKey], secret: &RandomSecret, commitments: &[Commitment], data: &[u8]) -> PartialSignature {
+    //     let kp = KeyPair::from(self.private_key.clone());
+    //     kp.partial_sign(public_keys, secret, commitments, data).0
+    // }
 }
 
 impl<'a> From<&'a MultiSig> for Config {
