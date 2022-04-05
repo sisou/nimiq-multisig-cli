@@ -2,8 +2,7 @@ use base64;
 use hex::FromHex;
 use itertools::Itertools;
 use nimiq_hash::Blake2bHasher;
-use nimiq_keys::{Address, PrivateKey, PublicKey}; //, KeyPair
-// use nimiq_keys::multisig::{RandomSecret, Commitment, PartialSignature};
+use nimiq_keys::{Address, PrivateKey, PublicKey}; 
 use nimiq_utils::merkle::compute_root_from_content;
 use std::io;
 use std::io::Write;
@@ -20,14 +19,6 @@ pub struct MultiSig {
     pub num_signers: usize,
     pub public_keys: Vec<PublicKey>,
 }
-
-
-// impl std::fmt::Display for MultiSig {
-//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-//         write!(f, "(value secret: {:?}, value private_key: {:?}), value num_signers: {}, value public_keys: {:?}", 
-//         self.secret, self.private_key, self.num_signers, self.public_keys)
-//     }
-// }
 
 
 impl MultiSig {
@@ -94,8 +85,6 @@ impl MultiSig {
             num_signers,
             public_keys,
         };
-
-        // println!("{}", wallet);
 
         println!("🤓 Do you want to store everything in a configuration file for easier access (your private key is encrypted)? yes/[no]");
         let store = read_bool()?;

@@ -7,10 +7,7 @@ use hex::FromHex;
 use nimiq_hash::pbkdf2::compute_pbkdf2_sha512;
 use nimiq_hash::Blake2bHasher;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature, RandomSecret};
-
-use nimiq_keys::{KeyPair};
-
-use nimiq_keys::{Address, PublicKey, Signature};
+use nimiq_keys::{Address, PublicKey, Signature, KeyPair};
 use nimiq_primitives::networks::NetworkId;
 use nimiq_transaction::{Transaction, SignatureProof, TransactionFormat};
 use nimiq_utils::key_rng::{RngCore, SecureGenerate, SecureRng};
@@ -20,18 +17,11 @@ use std::convert::TryFrom;
 use std::io;
 use std::io::Write;
 
-// use curve25519_dalek::constants;
-use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
+use curve25519_dalek::edwards::{CompressedEdwardsY};
 use curve25519_dalek::scalar::Scalar;
-// use curve25519_dalek::traits::Identity;
-// use nimiq_hash::{Hasher, Sha512Hasher};
-// use sha2::{self, Sha512};
 use sha2::{Sha512, Digest};
 
-// use crate::private_key::Secret;
-// use crate::config::{Commitment as CommitmentState};
-use crate::config::{StateNew, CommitmentList};
-
+use crate::config::{State, CommitmentList};
 use crate::error::{MultiSigError, MultiSigResult};
 use crate::multisig::MultiSig;
 use crate::utils::{read_coin, read_line, read_usize, read_bool};
@@ -92,12 +82,8 @@ pub fn create_transaction(wallet: &MultiSig) -> MultiSigResult<Transaction> {
     Ok(tx)
 }
 
-pub struct SigningProcessNew {
+pub struct SigningProcess {
     pub own_public_key: PublicKey,
-
-    // encrypted_secret: String,
-    // own_commitment: CommitmentPair,
-    // other_commitments: Vec<SignerCommitment>,
 
     pub encrypted_secret_list: Vec<String>,
     pub own_commitment_list: Vec<CommitmentPair>,
@@ -108,16 +94,12 @@ pub struct SigningProcessNew {
     pub filename: String,
 }
 
-impl std::fmt::Display for SigningProcessNew {
+impl std::fmt::Display for SigningProcess {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "(encrypted_secret_list: {:?}, own_commitment_list: {:?})", self.encrypted_secret_list, self.own_commitment_list)
     }
 }
 
-// struct SignerCommitment {
-//     commitment: Commitment,
-//     public_key: PublicKey,
-// }
 
 pub struct SignerCommitmentList {
     pub commitment_list: Vec<Commitment>,
@@ -125,8 +107,7 @@ pub struct SignerCommitmentList {
 }
 
 
-
-impl SigningProcessNew {
+impl SigningProcess {
 
     pub fn start_signing_process(wallet: &MultiSig) -> MultiSigResult<Self> {
         println!("👏🏼 Let's get started with the signing process.");
@@ -149,11 +130,10 @@ impl SigningProcessNew {
     
 
         // We should add multiple (e.g., 2) pre-commitments
-        let mut i = 0;
         let mut encrypted_secrets = vec![];
         let mut cp_list = vec![];
         let mut commitment_str_list = vec![];
-        while i < MUSIG2_PARAMETER_V {
+        for _i in 0..MUSIG2_PARAMETER_V {
             let cp = CommitmentPair::generate_default_csprng();
             let commitment_str = hex::encode(cp.commitment().to_bytes());
 
@@ -163,11 +143,9 @@ impl SigningProcessNew {
             encrypted_secrets.push(encrypted_secret);
             cp_list.push(cp);
             commitment_str_list.push(commitment_str);
-
-            i += 1;
         }
 
-        let mut state = SigningProcessNew {
+        let mut state = SigningProcess {
             encrypted_secret_list: encrypted_secrets,
             own_public_key: own_pk,
             own_commitment_list: cp_list,
@@ -179,22 +157,19 @@ impl SigningProcessNew {
 
         println!("❗️ Please give to your co-signers the following information:");
         println!("Public Key: {}", own_pk);
-        // println!("Commitments: {}", );
-        for c in commitment_str_list.iter() {
-            println!("{}", c);
-        }
 
+        for (i, c) in commitment_str_list.iter().enumerate() {
+            println!("Commitment {}: {}", i+1, c);
+        }
 
         // Save state.
         state.save()?;
-
         state.continue_signing_process(wallet)?;
-
         Ok(state)
     }
 
     pub fn save(&self) -> MultiSigResult<()> {
-        StateNew::from(self).to_file(&self.filename)?;
+        State::from(self).to_file(&self.filename)?;
         Ok(())
     }
 
@@ -211,12 +186,8 @@ impl SigningProcessNew {
         print!("> ");
         io::stdout().flush()?;
         let password = rpassword::read_password()?;
-
-        println!("{:?}", password);
-        // println!("{:?}", <std::string::String as AsRef<OsStr>>::as_ref(password));
-
-        let state = StateNew::from_file(&filename)?;
-        let mut state = SigningProcessNew::from_state(&state, password.as_ref(), filename)?;
+        let state = State::from_file(&filename)?;
+        let mut state = SigningProcess::from_state(&state, password.as_ref(), filename)?;
 
         state.continue_signing_process(wallet)?;
 
@@ -274,11 +245,10 @@ impl SigningProcessNew {
                 println!("🤨 Duplicate public key, ignoring this one.");
                 continue;
             }
-
             println!("  Enter the corresponding commitment list:");
-            let mut i = 0;
+            
             let mut collected_commitment_list = vec![];
-            while i < MUSIG2_PARAMETER_V{
+            for i in 0..MUSIG2_PARAMETER_V{
                 println!("  Enter the {}/{} commitment:", i+1, MUSIG2_PARAMETER_V);
                 let commitment_str = read_line()?;
                 let mut commitment = [0u8; Commitment::SIZE];
@@ -289,7 +259,6 @@ impl SigningProcessNew {
                     continue;
                 };
                 collected_commitment_list.push(commitment);
-                i += 1;
             }
             
 
@@ -378,14 +347,10 @@ impl SigningProcessNew {
         for c in self.other_commitments_list.iter(){
             public_keys.push(c.public_key);
         }
+        public_keys.push(self.own_public_key);
+
         let public_keys_hash = hash_public_keys(&public_keys);
         // And delinearize them.
-
-        let _delinearized_pk_sum: EdwardsPoint = public_keys
-            .iter()
-            .map(|public_key| public_key.delinearize(&public_keys_hash))
-            .sum();
-
         let own_kp = KeyPair{
             public: self.own_public_key.clone(),
             private: wallet.private_key.clone(),
@@ -397,7 +362,7 @@ impl SigningProcessNew {
         let (aggregated_commitment, b) = self.aggregated_commitment_from_list()?;
 
 
-        // Compute H(commitment || public key || message).
+        // Compute H(apk, R, m)
         let mut hasher = Sha512::new();
         hasher.update(aggregated_public_key.as_bytes());
         hasher.update(aggregated_commitment.to_bytes());
@@ -412,16 +377,12 @@ impl SigningProcessNew {
 
         // Compute partial signatures
         let mut secret = (*self.own_commitment_list[0].random_secret()).0;
-        let mut i = 1;
-        while i < MUSIG2_PARAMETER_V {
-            let mut j = 0;
+        for i in 0..MUSIG2_PARAMETER_V {
             let mut scale = b;
-            while j < i{
+            for _j in 0..i {
                 scale *= b;
-                j += 1;
             }
             secret += (*self.own_commitment_list[i].random_secret()).0 * scale;
-            i += 1;
         }
 
         let partial_signature_scalar: Scalar = s * delinearized_private_key + secret;
@@ -498,7 +459,7 @@ impl SigningProcessNew {
     }
 
 
-    pub fn from_state(state: &StateNew, password: &[u8], filename: String) -> MultiSigResult<Self> {
+    pub fn from_state(state: &State, password: &[u8], filename: String) -> MultiSigResult<Self> {
         let mut commitments_list: Vec<SignerCommitmentList> = state
             .commitments_list
             .iter()
@@ -508,11 +469,10 @@ impl SigningProcessNew {
         // let own_commitment_pair = commitments.pop().ok_or(MultiSigError::MissingCommitments)?;
         let own_commitment_pair_list = commitments_list.pop().ok_or(MultiSigError::MissingCommitments)?;
 
-        let mut i = 0;
         let mut own_commitment_list = vec![];
         let mut encrypted_secret_list = vec![];
 
-        while i < MUSIG2_PARAMETER_V{
+        for i in 0..MUSIG2_PARAMETER_V{
             let random_secret = decrypt(state.secret_list[i].clone(), password)?;
             let mut secret_bytes = [0u8; RandomSecret::SIZE];
             secret_bytes.copy_from_slice(&random_secret);
@@ -521,7 +481,6 @@ impl SigningProcessNew {
             own_commitment_list.push(own_commitment);
 
             encrypted_secret_list.push(state.secret_list[i].clone());
-            i += 1;
         }
 
         let transaction = state
@@ -540,7 +499,7 @@ impl SigningProcessNew {
             }
         }
 
-        Ok(SigningProcessNew {
+        Ok(SigningProcess {
             encrypted_secret_list,
             own_public_key: own_commitment_pair_list.public_key,
             own_commitment_list,
@@ -555,30 +514,24 @@ impl SigningProcessNew {
     pub fn aggregated_commitment_from_list(&self) -> MultiSigResult<(Commitment, Scalar)> {
 
         let mut partial_agg_commitments = vec![];
-        let mut i = 0;
-        while i < MUSIG2_PARAMETER_V{
+
+        for i in 0..MUSIG2_PARAMETER_V{
             partial_agg_commitments.push(*self.own_commitment_list[i].commitment());
-            i += 1;
         }
-        let mut i = 0;
-        while i < MUSIG2_PARAMETER_V{
+        for i in 0..MUSIG2_PARAMETER_V{
             for c in self.other_commitments_list.iter() {
                 let tmp1 = CompressedEdwardsY(partial_agg_commitments[i].to_bytes()).decompress().unwrap();
                 let tmp2 = CompressedEdwardsY(c.commitment_list[i].to_bytes()).decompress().unwrap();
                 partial_agg_commitments[i] = Commitment(tmp1 + tmp2);
             }
-            // println!("{:?}", partial_agg_commitments[i]);
-            i += 1;
         }
 
         //compute hash value b = H(aggregated_public_key|(R_1, ..., R_v)|m)
         let mut hasher = Sha512::new();
         hasher.update(self.aggregated_public_key().as_bytes());
-        let mut i = 0;
-        while i < MUSIG2_PARAMETER_V{
+        for i in 0..MUSIG2_PARAMETER_V{
             let tmp1 = partial_agg_commitments[i].to_bytes();
             hasher.update(tmp1);
-            i += 1;
         }
 
         let data = self.transaction.as_ref().ok_or(MultiSigError::MissingTransaction)?.serialize_content();
@@ -586,21 +539,15 @@ impl SigningProcessNew {
 
         let hash = hasher.finalize();
         let b = Scalar::from_bytes_mod_order_wide(&hash.into());
-        // println!("{:?}", b);
 
-        let mut i = 1;
         let mut agg_commitment_edwards = CompressedEdwardsY(partial_agg_commitments[0].to_bytes()).decompress().unwrap();
 
-        
-        while i < MUSIG2_PARAMETER_V{
-            let mut j = 0;
+        for i in 1..MUSIG2_PARAMETER_V{
             let mut scale = b;
-            while j < i{
+            for _j in 0..i {
                 scale *= b;
-                j += 1;
             }
             agg_commitment_edwards += CompressedEdwardsY(partial_agg_commitments[i].to_bytes()).decompress().unwrap() * scale;
-            i += 1;
         }
         Ok((Commitment(agg_commitment_edwards), b))
     }
@@ -608,27 +555,15 @@ impl SigningProcessNew {
     pub fn aggregated_public_key(&self) -> PublicKey {
         let mut public_keys: Vec<PublicKey> = self.other_commitments_list.iter().map(|sc| sc.public_key).collect();
         public_keys.push(self.own_public_key);
-        public_keys.sort();
-        
+        public_keys.sort();   
         PublicKey::from(DelinearizedPublicKey::sum_delinearized(&public_keys))
     }
-
-    // pub fn test_public_key(pk_str: String) -> MultiSigResult<()> {
-    //     let pk = if let Ok(pk) = PublicKey::from_hex(&pk_str) {
-    //         println!(" This is  a valid public key.");
-    //     } else {
-    //         println!("🤨 This is not a valid public key.");
-    //     };
-    //     Ok(())
-    // }
-
 }
 
 
 fn secret_to_vec(secret: &RandomSecret) -> Vec<u8> {
     // This is extremely hacky!
     let s = format!("{:?}", secret);
-
     let mut v = vec![];
     let re = Regex::new(r"(\d+)").unwrap();
     for cap in re.captures_iter(&s) {
@@ -676,8 +611,8 @@ fn decrypt(ciphertext: String, password: &[u8]) -> MultiSigResult<Vec<u8>> {
 }
 
 
-impl<'a> From<&'a SigningProcessNew> for StateNew {
-    fn from(c: &'a SigningProcessNew) -> Self {
+impl<'a> From<&'a SigningProcess> for State {
+    fn from(c: &'a SigningProcess) -> Self {
 
         let mut commitments_list: Vec<CommitmentList> = c
             .other_commitments_list
@@ -705,7 +640,7 @@ impl<'a> From<&'a SigningProcessNew> for StateNew {
                     .collect(),
             )
         };
-        StateNew {
+        State {
             secret_list: c.encrypted_secret_list.clone(),
             commitments_list,
             transaction: c
@@ -729,19 +664,6 @@ impl<'a> From<&'a SignerCommitmentList> for CommitmentList{
         }
     }
 }
-
-// impl<'a> TryFrom<&'a CommitmentState> for SignerCommitment {
-    // type Error = MultiSigError;
-
-    // fn try_from(c: &'a CommitmentState) -> MultiSigResult<Self> {
-    //     let mut commitment = [0u8; Commitment::SIZE];
-    //     hex::decode_to_slice(&c.commitment, &mut commitment)?;
-    //     Ok(SignerCommitment {
-    //         public_key: PublicKey::from_hex(&c.public_key)?,
-    //         commitment: Commitment::from(commitment),
-    //     })
-    // }
-// }
 
 impl<'a> TryFrom<&'a CommitmentList> for SignerCommitmentList {
     type Error = MultiSigError;
@@ -798,7 +720,7 @@ mod tests {
             public_keys: vec![public_key],
         };
 
-        let mut sp = SigningProcessNew {
+        let mut sp = SigningProcess {
             own_public_key: public_key,
             encrypted_secret_list: vec![secret_str.clone(), secret_str.clone()],
             own_commitment_list: vec![],
@@ -809,7 +731,7 @@ mod tests {
             filename: "test.toml".to_string(),
         };
 
-        let mut _sp = SigningProcessNew::start_signing_process_new(&wallet);
+        let mut _sp = SigningProcess::start_signing_process_new(&wallet);
         println!("test")
         
     }
