@@ -37,6 +37,7 @@ pub fn hash_public_keys(public_keys: &[PublicKey]) -> [u8; 64] {
     public_keys_hash
 }
 
+
 impl MultiSig {
     pub fn public_key(&self) -> PublicKey {
         PublicKey::from(&self.private_key)
@@ -214,9 +215,11 @@ impl MultiSig {
             public: self.public_key().clone(),
             private: self.private_key.clone(),
         };
+
+        // Note that here we delinearize as p^{H(H(pks), p)}, e.g., with an additioal hash due to the function delinearize_private_key
         let delinearized_private_key: Scalar = own_kp.delinearize_private_key(&public_keys_hash);
 
-        // Compute H(apk, R, m)
+        // Compute c = H(apk, R, m)
         let mut hasher = Sha512::new();
         hasher.update(aggregated_public_key.as_bytes());
         hasher.update(aggregated_commitment.to_bytes());
@@ -240,6 +243,9 @@ impl MultiSig {
         let partial_signature = PartialSignature(partial_signature_scalar);
         partial_signature
     }
+
+
+
 }
 
 impl<'a> From<&'a MultiSig> for Config {
