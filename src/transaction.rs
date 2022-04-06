@@ -7,7 +7,7 @@ use hex::FromHex;
 use nimiq_hash::pbkdf2::compute_pbkdf2_sha512;
 use nimiq_hash::Blake2bHasher;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature, RandomSecret};
-use nimiq_keys::{Address, PublicKey, Signature, KeyPair};
+use nimiq_keys::{Address, PublicKey, Signature};
 use nimiq_primitives::networks::NetworkId;
 use nimiq_transaction::{Transaction, SignatureProof, TransactionFormat};
 use nimiq_utils::key_rng::{RngCore, SecureGenerate, SecureRng};
@@ -31,18 +31,6 @@ type Aes256Cbc = Cbc<Aes256, Pkcs7>;
 
 static MUSIG2_PARAMETER_V: usize = 2; // Parameter used in Musig2
 
-
-
-pub fn hash_public_keys(public_keys: &[PublicKey]) -> [u8; 64] {
-    // 1. Compute hash over public keys public_keys_hash = C = H(P_1 || ... || P_n).
-    let mut h: sha2::Sha512 = sha2::Sha512::default();
-    let mut public_keys_hash: [u8; 64] = [0u8; 64];
-    for public_key in public_keys {
-        h.update(public_key.as_bytes());
-    }
-    public_keys_hash.copy_from_slice(h.finalize().as_slice());
-    public_keys_hash
-}
 
 
 pub fn create_transaction(wallet: &MultiSig) -> MultiSigResult<Transaction> {
@@ -339,55 +327,21 @@ impl SigningProcess {
         println!();
         println!("2️⃣ Step 2a: Creating your own partial signature.");
         
-        // Aggregate public keys.
         let aggregated_public_key = self.aggregated_public_key();
-
-        // Hash public keys.
         let mut public_keys = vec![];
         for c in self.other_commitments_list.iter(){
             public_keys.push(c.public_key);
         }
         public_keys.push(self.own_public_key);
-
-        let public_keys_hash = hash_public_keys(&public_keys);
-        // And delinearize them.
-        let own_kp = KeyPair{
-            public: self.own_public_key.clone(),
-            private: wallet.private_key.clone(),
-        };
-
-        let delinearized_private_key: Scalar = own_kp.delinearize_private_key(&public_keys_hash);
-
-        // Aggregate commitments and hash value b = H(aggregated_public_key|(R_1, ..., R_v)|m).
         let (aggregated_commitment, b) = self.aggregated_commitment_from_list()?;
-
-
-        // Compute H(apk, R, m)
-        let mut hasher = Sha512::new();
-        hasher.update(aggregated_public_key.as_bytes());
-        hasher.update(aggregated_commitment.to_bytes());
-    
         let data = self.transaction.as_ref().ok_or(MultiSigError::MissingTransaction)?.serialize_content();
-        hasher.update(data);
 
-        let hash = hasher.finalize();
-        let s = Scalar::from_bytes_mod_order_wide(&hash.into());
-        // println!("{:?}", b);
-
-
-        // Compute partial signatures
-        let mut secret = (*self.own_commitment_list[0].random_secret()).0;
-        for i in 0..MUSIG2_PARAMETER_V {
-            let mut scale = b;
-            for _j in 0..i {
-                scale *= b;
-            }
-            secret += (*self.own_commitment_list[i].random_secret()).0 * scale;
-        }
-
-        let partial_signature_scalar: Scalar = s * delinearized_private_key + secret;
-
-        let partial_signature = PartialSignature(partial_signature_scalar);
+        let partial_signature = wallet.partially_sign(&public_keys.clone(), 
+            &aggregated_public_key.clone(), 
+            &aggregated_commitment.clone(), 
+            b.clone(),
+            &self.own_commitment_list.clone(), 
+            &data.clone());
 
         self.partial_signatures.push(partial_signature);
         self.save()?;
@@ -460,14 +414,14 @@ impl SigningProcess {
 
 
     pub fn from_state(state: &State, password: &[u8], filename: String) -> MultiSigResult<Self> {
-        let mut commitments_list: Vec<SignerCommitmentList> = state
-            .commitments_list
+        let mut commitment_list: Vec<SignerCommitmentList> = state
+            .commitment_list
             .iter()
             .map(SignerCommitmentList::try_from)
             .collect::<Result<_, _>>()?;
 
         // let own_commitment_pair = commitments.pop().ok_or(MultiSigError::MissingCommitments)?;
-        let own_commitment_pair_list = commitments_list.pop().ok_or(MultiSigError::MissingCommitments)?;
+        let own_commitment_pair_list = commitment_list.pop().ok_or(MultiSigError::MissingCommitments)?;
 
         let mut own_commitment_list = vec![];
         let mut encrypted_secret_list = vec![];
@@ -503,7 +457,7 @@ impl SigningProcess {
             encrypted_secret_list,
             own_public_key: own_commitment_pair_list.public_key,
             own_commitment_list,
-            other_commitments_list: commitments_list,
+            other_commitments_list: commitment_list,
             transaction,
             partial_signatures,
             filename,
@@ -511,8 +465,8 @@ impl SigningProcess {
     }
 
     // We should calculate delinearized scalars for pre-commitments
+    // b = H(aggregated_public_key|(R_1, ..., R_v)|m)
     pub fn aggregated_commitment_from_list(&self) -> MultiSigResult<(Commitment, Scalar)> {
-
         let mut partial_agg_commitments = vec![];
 
         for i in 0..MUSIG2_PARAMETER_V{
@@ -614,7 +568,7 @@ fn decrypt(ciphertext: String, password: &[u8]) -> MultiSigResult<Vec<u8>> {
 impl<'a> From<&'a SigningProcess> for State {
     fn from(c: &'a SigningProcess) -> Self {
 
-        let mut commitments_list: Vec<CommitmentList> = c
+        let mut commitment_list: Vec<CommitmentList> = c
             .other_commitments_list
             .iter()
             .map(CommitmentList::from)
@@ -625,7 +579,7 @@ impl<'a> From<&'a SigningProcess> for State {
         for cm in c.own_commitment_list.iter(){
             own_commitment_list_str.push(hex::encode(cm.commitment().to_bytes()));
         }
-        commitments_list.push(CommitmentList {
+        commitment_list.push(CommitmentList {
             public_key: c.own_public_key.to_hex(),
             commitment_list: own_commitment_list_str,
         });
@@ -642,7 +596,7 @@ impl<'a> From<&'a SigningProcess> for State {
         };
         State {
             secret_list: c.encrypted_secret_list.clone(),
-            commitments_list,
+            commitment_list,
             transaction: c
                 .transaction
                 .as_ref()

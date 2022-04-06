@@ -26,7 +26,7 @@ pub struct State {
     pub secret_list: Vec<String>,
     pub transaction: Option<String>,
     pub partial_signatures: Option<Vec<String>>,
-    pub commitments_list: Vec<CommitmentList>,
+    pub commitment_list: Vec<CommitmentList>,
 }
 
 

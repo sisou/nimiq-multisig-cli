@@ -9,10 +9,8 @@ mod transaction;
 
 use crate::error::MultiSigResult;
 use crate::multisig::MultiSig;
-
 use crate::utils::read_usize;
 use crate::transaction::{create_transaction, SigningProcess};
-
 
 
 fn main() -> MultiSigResult<()> {
