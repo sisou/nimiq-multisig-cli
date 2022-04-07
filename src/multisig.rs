@@ -243,9 +243,6 @@ impl MultiSig {
         let partial_signature = PartialSignature(partial_signature_scalar);
         partial_signature
     }
-
-
-
 }
 
 impl<'a> From<&'a MultiSig> for Config {

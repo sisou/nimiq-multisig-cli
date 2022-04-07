@@ -12,7 +12,6 @@ use nimiq_primitives::networks::NetworkId;
 use nimiq_transaction::{Transaction, SignatureProof, TransactionFormat};
 use nimiq_utils::key_rng::{RngCore, SecureGenerate, SecureRng};
 use nimiq_utils::merkle::Blake2bMerklePath;
-use regex::Regex;
 use std::convert::TryFrom;
 use std::io;
 use std::io::Write;
@@ -124,8 +123,7 @@ impl SigningProcess {
         for _i in 0..MUSIG2_PARAMETER_V {
             let cp = CommitmentPair::generate_default_csprng();
             let commitment_str = hex::encode(cp.commitment().to_bytes());
-
-            let secret = secret_to_vec(cp.random_secret());
+            let secret = cp.random_secret().0.to_bytes();
             let encrypted_secret = encrypt(&secret, password.as_ref())?;
 
             encrypted_secrets.push(encrypted_secret);
@@ -512,18 +510,6 @@ impl SigningProcess {
         public_keys.sort();   
         PublicKey::from(DelinearizedPublicKey::sum_delinearized(&public_keys))
     }
-}
-
-
-fn secret_to_vec(secret: &RandomSecret) -> Vec<u8> {
-    // This is extremely hacky!
-    let s = format!("{:?}", secret);
-    let mut v = vec![];
-    let re = Regex::new(r"(\d+)").unwrap();
-    for cap in re.captures_iter(&s) {
-        v.push(cap[0].parse::<u8>().unwrap());
-    }
-    v
 }
 
 const N_ITER: usize = 100_000;
