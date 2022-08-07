@@ -26,6 +26,20 @@ impl MultiSig {
         PublicKey::from(&self.private_key)
     }
 
+    pub fn new(
+        secret: Vec<u8>,
+        private_key: PrivateKey,
+        num_signers: usize,
+        public_keys: Vec<PublicKey>,
+    ) -> Self {
+        MultiSig {
+            secret,
+            private_key,
+            num_signers,
+            public_keys,
+        }
+    }
+
     pub fn from_terminal() -> MultiSigResult<Self> {
         println!("🤓 Have you already imported your MultiSig and want to load the configuration? yes/[no]");
         let import = read_bool()?;
@@ -79,12 +93,7 @@ impl MultiSig {
         let num_signers = read_usize()?;
         println!("  So, {} are required for signing.", num_signers);
 
-        let wallet = MultiSig {
-            secret,
-            private_key,
-            num_signers,
-            public_keys,
-        };
+        let wallet = MultiSig::new(secret, private_key, num_signers, public_keys);
 
         println!("🤓 Do you want to store everything in a configuration file for easier access (your private key is encrypted)? yes/[no]");
         let store = read_bool()?;
@@ -148,12 +157,7 @@ impl MultiSig {
             }
         }
 
-        let wallet = MultiSig {
-            secret,
-            private_key,
-            num_signers: config.num_signers,
-            public_keys,
-        };
+        let wallet = MultiSig::new(secret, private_key, config.num_signers, public_keys);
 
         Ok(wallet)
     }
