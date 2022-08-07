@@ -29,7 +29,6 @@ pub struct State {
     pub commitment_list: Vec<CommitmentList>,
 }
 
-
 impl State {
     pub fn from_file(filename: &str) -> MultiSigResult<Self> {
         Ok(toml::from_str(&fs::read_to_string(filename)?)?)

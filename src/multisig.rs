@@ -2,8 +2,8 @@ use base64;
 use hex::FromHex;
 use itertools::Itertools;
 use nimiq_hash::Blake2bHasher;
-use nimiq_keys::{Address, PrivateKey, PublicKey, KeyPair}; 
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature};
+use nimiq_keys::{Address, KeyPair, PrivateKey, PublicKey};
 use nimiq_utils::merkle::compute_root_from_content;
 use std::io;
 use std::io::Write;
@@ -15,7 +15,7 @@ use crate::public_key::DelinearizedPublicKey;
 use crate::utils::{read_bool, read_line, read_usize};
 
 use curve25519_dalek::scalar::Scalar;
-use sha2::{Sha512, Digest};
+use sha2::{Digest, Sha512};
 
 static MUSIG2_PARAMETER_V: usize = 2; // Parameter used in Musig2
 pub struct MultiSig {
@@ -24,7 +24,6 @@ pub struct MultiSig {
     pub num_signers: usize,
     pub public_keys: Vec<PublicKey>,
 }
-
 
 pub fn hash_public_keys(public_keys: &[PublicKey]) -> [u8; 64] {
     // 1. Compute hash over public keys public_keys_hash = C = H(P_1 || ... || P_n).
@@ -36,7 +35,6 @@ pub fn hash_public_keys(public_keys: &[PublicKey]) -> [u8; 64] {
     public_keys_hash.copy_from_slice(h.finalize().as_slice());
     public_keys_hash
 }
-
 
 impl MultiSig {
     pub fn public_key(&self) -> PublicKey {
@@ -199,19 +197,20 @@ impl MultiSig {
         Ok(address)
     }
 
-    pub fn partially_sign(&self, public_keys: &[PublicKey], 
-        aggregated_public_key: &PublicKey, 
-        aggregated_commitment: &Commitment, 
+    pub fn partially_sign(
+        &self,
+        public_keys: &[PublicKey],
+        aggregated_public_key: &PublicKey,
+        aggregated_commitment: &Commitment,
         b: Scalar,
-        own_commitment_list: &[CommitmentPair], 
-        data: &[u8]) 
-        -> PartialSignature {
-        
+        own_commitment_list: &[CommitmentPair],
+        data: &[u8],
+    ) -> PartialSignature {
         // Hash public keys.
         let public_keys_hash = hash_public_keys(&public_keys);
 
         // And delinearize them.
-        let own_kp = KeyPair{
+        let own_kp = KeyPair {
             public: self.public_key().clone(),
             private: self.private_key.clone(),
         };
@@ -227,7 +226,7 @@ impl MultiSig {
 
         let hash = hasher.finalize();
         let c = Scalar::from_bytes_mod_order_wide(&hash.into());
-    
+
         // Compute partial signatures
         // s_j = \sk_j \cdot c \cdot a_j + \sum_{k=1}^{MUSIG2_PARAMETER_V} r_{j,k}\cdot b^{k-1}
         let mut secret = (*own_commitment_list[0].random_secret()).0;

@@ -4,14 +4,13 @@ mod multisig;
 mod private_key;
 mod public_key;
 mod state;
-mod utils;
 mod transaction;
+mod utils;
 
 use crate::error::MultiSigResult;
 use crate::multisig::MultiSig;
-use crate::utils::read_usize;
 use crate::transaction::{create_transaction, SigningProcess};
-
+use crate::utils::read_usize;
 
 fn main() -> MultiSigResult<()> {
     let wallet = MultiSig::from_terminal()?;
