@@ -9,7 +9,7 @@ use nimiq_hash::Blake2bHasher;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature, RandomSecret};
 use nimiq_keys::{Address, PublicKey, Signature};
 use nimiq_primitives::networks::NetworkId;
-use nimiq_transaction::{Transaction, SignatureProof, TransactionFormat};
+use nimiq_transaction::{SignatureProof, Transaction, TransactionFormat};
 use nimiq_utils::key_rng::{RngCore, SecureGenerate, SecureRng};
 use nimiq_utils::merkle::Blake2bMerklePath;
 use regex::Regex;
@@ -20,8 +20,8 @@ use std::io::Write;
 use crate::config::{Commitment as CommitmentState, State};
 use crate::error::{MultiSigError, MultiSigResult};
 use crate::multisig::MultiSig;
-use crate::utils::{read_coin, read_line, read_usize, read_bool};
 use crate::public_key::DelinearizedPublicKey;
+use crate::utils::{read_bool, read_coin, read_line, read_usize};
 
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
 
@@ -149,10 +149,7 @@ impl SigningProcess {
         Ok(state)
     }
 
-    pub fn continue_signing_process(
-        &mut self,
-        wallet: &MultiSig,
-    ) -> MultiSigResult<()> {
+    pub fn continue_signing_process(&mut self, wallet: &MultiSig) -> MultiSigResult<()> {
         if self.other_commitments.len() + 1 < wallet.num_signers {
             self.collect_commitments(wallet)?;
         }
@@ -180,7 +177,11 @@ impl SigningProcess {
         println!("☝🏼 Your intermediate progress will be saved so that you can always return!");
         while self.other_commitments.len() + 1 < wallet.num_signers {
             println!("  Enter a public key:");
-            print!("[{}/{}]", self.other_commitments.len() + 2, wallet.num_signers);
+            print!(
+                "[{}/{}]",
+                self.other_commitments.len() + 2,
+                wallet.num_signers
+            );
             let pk_str = read_line()?;
             let pk = if let Ok(pk) = PublicKey::from_hex(&pk_str) {
                 pk
@@ -259,7 +260,7 @@ impl SigningProcess {
             println!("  Ok, then let's create a new transaction.");
             transaction = create_transaction(wallet)?;
         }
-        
+
         self.transaction = Some(transaction.clone());
         self.save()?;
 
@@ -267,7 +268,10 @@ impl SigningProcess {
     }
 
     pub fn print_transaction_details(&self) -> MultiSigResult<()> {
-        let transaction = self.transaction.as_ref().ok_or(MultiSigError::MissingTransaction)?;
+        let transaction = self
+            .transaction
+            .as_ref()
+            .ok_or(MultiSigError::MissingTransaction)?;
 
         println!();
         println!("  Just to make sure. Here are the transaction details:");
@@ -276,32 +280,58 @@ impl SigningProcess {
             println!("❗️ Please check the transaction carefully!");
         }
         println!("Sender: {}", transaction.sender.to_user_friendly_address());
-        println!("Recipient: {}", transaction.recipient.to_user_friendly_address());
+        println!(
+            "Recipient: {}",
+            transaction.recipient.to_user_friendly_address()
+        );
         println!("Value: {} NIM", transaction.value);
         println!("Fee: {} NIM", transaction.fee);
 
         Ok(())
     }
 
-    pub fn create_partial_signature(&mut self, wallet: &MultiSig) -> MultiSigResult<PartialSignature> {
+    pub fn create_partial_signature(
+        &mut self,
+        wallet: &MultiSig,
+    ) -> MultiSigResult<PartialSignature> {
         println!();
         println!("2️⃣ Step 2a: Creating your own partial signature.");
-        let data = self.transaction.as_ref().ok_or(MultiSigError::MissingTransaction)?.serialize_content();
-        
-        let mut public_keys: Vec<PublicKey> = self.other_commitments.iter().map(|sc| sc.public_key).collect();
+        let data = self
+            .transaction
+            .as_ref()
+            .ok_or(MultiSigError::MissingTransaction)?
+            .serialize_content();
+
+        let mut public_keys: Vec<PublicKey> = self
+            .other_commitments
+            .iter()
+            .map(|sc| sc.public_key)
+            .collect();
         public_keys.push(self.own_public_key);
         public_keys.sort();
 
-        let mut commitments: Vec<Commitment> = self.other_commitments.iter().map(|sc| sc.commitment).collect();
+        let mut commitments: Vec<Commitment> = self
+            .other_commitments
+            .iter()
+            .map(|sc| sc.commitment)
+            .collect();
         commitments.push(*self.own_commitment.commitment());
 
-        let partial_signature = wallet.partially_sign(&public_keys, self.own_commitment.random_secret(), &commitments, &data);
+        let partial_signature = wallet.partially_sign(
+            &public_keys,
+            self.own_commitment.random_secret(),
+            &commitments,
+            &data,
+        );
 
         self.partial_signatures.push(partial_signature);
         self.save()?;
-        
+
         println!("❗️ Please give to your co-signers the following information:");
-        println!("Partial Signature: {}", hex::encode(partial_signature.as_bytes()));
+        println!(
+            "Partial Signature: {}",
+            hex::encode(partial_signature.as_bytes())
+        );
         Ok(partial_signature)
     }
 
@@ -310,15 +340,20 @@ impl SigningProcess {
         println!("2️⃣ Step 2b: Collecting the other signers' partial signatures.");
         while self.partial_signatures.len() < wallet.num_signers {
             println!("  Enter a partial signature:");
-            print!("[{}/{}]", self.partial_signatures.len() + 1, wallet.num_signers);
+            print!(
+                "[{}/{}]",
+                self.partial_signatures.len() + 1,
+                wallet.num_signers
+            );
             let ps_str = read_line()?;
             let mut partial_signature = [0u8; PartialSignature::SIZE];
-            let partial_signature = if let Ok(_) = hex::decode_to_slice(&ps_str, &mut partial_signature) {
-                PartialSignature::from(partial_signature)
-            } else {
-                println!("🤨 This is not a valid partial signature.");
-                continue;
-            };
+            let partial_signature =
+                if let Ok(_) = hex::decode_to_slice(&ps_str, &mut partial_signature) {
+                    PartialSignature::from(partial_signature)
+                } else {
+                    println!("🤨 This is not a valid partial signature.");
+                    continue;
+                };
 
             // if self.partial_signatures.contains(&partial_signature) {
             //     println!("🤨 Duplicate partial signature, ignoring this one.");
@@ -330,10 +365,8 @@ impl SigningProcess {
         }
 
         println!();
-        println!(
-            "🎉 Step 2 is complete."
-        );
-        
+        println!("🎉 Step 2 is complete.");
+
         let aggregated_signature: PartialSignature = self.partial_signatures.iter().sum();
         Ok(aggregated_signature.to_signature(&self.aggregated_commitment()))
     }
@@ -341,24 +374,30 @@ impl SigningProcess {
     pub fn sign_transaction(&self, wallet: &MultiSig) -> MultiSigResult<Transaction> {
         println!();
         println!("✅ Finishing transaction.");
-        
+
         let aggregated_signature: PartialSignature = self.partial_signatures.iter().sum();
         let signature = aggregated_signature.to_signature(&self.aggregated_commitment());
         let public_key = self.aggregated_public_key();
 
         let signature_proof = SignatureProof {
-            merkle_path: Blake2bMerklePath::new::<Blake2bHasher, _>(&wallet.public_keys()?, &public_key),
+            merkle_path: Blake2bMerklePath::new::<Blake2bHasher, _>(
+                &wallet.public_keys()?,
+                &public_key,
+            ),
             public_key,
             signature,
         };
 
-        let mut transaction = self.transaction.clone().ok_or(MultiSigError::MissingTransaction)?;
+        let mut transaction = self
+            .transaction
+            .clone()
+            .ok_or(MultiSigError::MissingTransaction)?;
         transaction.proof = signature_proof.serialize_to_vec();
 
         println!("  Here's the fully signed transaction:");
         println!("{}", hex::encode(transaction.serialize_to_vec()));
         println!();
-        
+
         Ok(transaction)
     }
 
@@ -369,10 +408,14 @@ impl SigningProcess {
     }
 
     pub fn aggregated_public_key(&self) -> PublicKey {
-        let mut public_keys: Vec<PublicKey> = self.other_commitments.iter().map(|sc| sc.public_key).collect();
+        let mut public_keys: Vec<PublicKey> = self
+            .other_commitments
+            .iter()
+            .map(|sc| sc.public_key)
+            .collect();
         public_keys.push(self.own_public_key);
         public_keys.sort();
-        
+
         PublicKey::from(DelinearizedPublicKey::sum_delinearized(&public_keys))
     }
 

@@ -2,8 +2,8 @@ use base64;
 use hex::FromHex;
 use itertools::Itertools;
 use nimiq_hash::Blake2bHasher;
-use nimiq_keys::{Address, PrivateKey, PublicKey, KeyPair};
-use nimiq_keys::multisig::{RandomSecret, Commitment, PartialSignature};
+use nimiq_keys::multisig::{Commitment, PartialSignature, RandomSecret};
+use nimiq_keys::{Address, KeyPair, PrivateKey, PublicKey};
 use nimiq_utils::merkle::compute_root_from_content;
 use std::io;
 use std::io::Write;
@@ -182,7 +182,13 @@ impl MultiSig {
         Ok(address)
     }
 
-    pub fn partially_sign(&self, public_keys: &[PublicKey], secret: &RandomSecret, commitments: &[Commitment], data: &[u8]) -> PartialSignature {
+    pub fn partially_sign(
+        &self,
+        public_keys: &[PublicKey],
+        secret: &RandomSecret,
+        commitments: &[Commitment],
+        data: &[u8],
+    ) -> PartialSignature {
         let kp = KeyPair::from(self.private_key.clone());
         kp.partial_sign(public_keys, secret, commitments, data).0
     }
