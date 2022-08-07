@@ -9,7 +9,7 @@ mod utils;
 
 use crate::error::MultiSigResult;
 use crate::multisig::MultiSig;
-use crate::transaction::{create_transaction, SigningProcess};
+use crate::transaction::{create_transaction, CliSigningProcess};
 use crate::utils::read_usize;
 
 fn main() -> MultiSigResult<()> {
@@ -39,10 +39,10 @@ fn main() -> MultiSigResult<()> {
         // Let the user decide what to do.
         match choice {
             0 => {
-                let _sp = SigningProcess::start_signing_process(&wallet)?;
+                let _sp = CliSigningProcess::start_signing_process(&wallet)?;
             }
             1 => {
-                let _sp = SigningProcess::load_signing_process(&wallet)?;
+                let _sp = CliSigningProcess::load_signing_process(&wallet)?;
             }
             2 => {
                 let _tx = create_transaction(&wallet)?;

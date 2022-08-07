@@ -24,6 +24,7 @@ impl Config {
 #[derive(Serialize, Deserialize)]
 pub struct State {
     pub secret: String,
+    pub num_signers: usize,
     pub transaction: Option<String>,
     pub partial_signatures: Option<Vec<String>>,
     pub commitments: Vec<Commitment>,

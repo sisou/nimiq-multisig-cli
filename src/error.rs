@@ -50,8 +50,14 @@ pub enum MultiSigError {
     InvalidPrivateKey,
     #[error("Invalid access file")]
     InvalidAccessFile,
+    #[error("Missing own signature")]
+    MissingOwnSignature,
     #[error("Missing Transaction")]
     MissingTransaction,
+    #[error("All signers already collected")]
+    NoMoreSigners,
+    #[error("Own signature already present")]
+    AlreadySigned,
 }
 
 pub type MultiSigResult<T> = Result<T, MultiSigError>;
