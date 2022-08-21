@@ -204,8 +204,8 @@ impl MultiSig {
     pub fn partially_sign(
         &self,
         public_keys: &[PublicKey],
-        aggregated_public_key: &PublicKey,
         aggregated_commitment: &Commitment,
+        aggregated_public_key: &PublicKey,
         b: Scalar,
         own_commitment_list: &[CommitmentPair],
         data: &[u8],
