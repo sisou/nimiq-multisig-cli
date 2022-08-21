@@ -2,6 +2,7 @@ use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
 use nimiq_hash::{Hasher, Sha512Hasher};
+use nimiq_keys::multisig::hash_public_keys;
 use nimiq_keys::PublicKey;
 use std::borrow::Borrow;
 use std::iter::Sum;
@@ -63,14 +64,4 @@ where
             iter.fold(EdwardsPoint::identity(), |acc, item| acc + item.borrow().0),
         )
     }
-}
-
-fn hash_public_keys(public_keys: &[PublicKey]) -> [u8; 64] {
-    // 1. Compute hash over public keys public_keys_hash = C = H(P_1 || ... || P_n).
-    let mut hasher = Sha512Hasher::default();
-    for public_key in public_keys {
-        hasher.hash(public_key);
-    }
-    let hash = hasher.finish();
-    hash.into()
 }

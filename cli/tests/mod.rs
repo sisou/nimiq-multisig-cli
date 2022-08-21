@@ -41,9 +41,9 @@ fn it_can_sign_a_valid_transaction() {
     let multisig_b = MultiSig::new(secret_b, private_key_b, 2, vec![public_key_a, public_key_c]);
     let multisig_c = MultiSig::new(secret_c, private_key_c, 2, vec![public_key_a, public_key_b]);
 
-    let address_a = multisig_a.address().unwrap();
-    let address_b = multisig_b.address().unwrap();
-    let address_c = multisig_c.address().unwrap();
+    let address_a = multisig_a.address();
+    let address_b = multisig_b.address();
+    let address_c = multisig_c.address();
 
     // Ensure all three participants calculate the same address
     assert!(address_a.eq(&address_b));
@@ -93,7 +93,7 @@ fn it_can_sign_a_valid_transaction() {
         .add_partial_signature(partial_signature_b)
         .unwrap();
 
-    let transaction = signing_process_a.finalize_transaction(&multisig_a).unwrap();
+    let transaction = signing_process_a.sign_transaction(&multisig_a).unwrap();
 
     match transaction.verify(NetworkId::Dummy) {
         Err(error) => println!("Error: {}", error),

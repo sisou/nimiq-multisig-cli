@@ -1,29 +1,7 @@
-[package]
-name = "multisig-tool"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [
+  "cli",
+  "lib",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-image = "0.23.14"
-quircs = "0.10.0"
-nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1", features = ["key-rng", "merkle"] }
-nimiq-primitives = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1", features = ["coin", "networks"] }
-nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-toml = "0.5.8"
-serde = "1.0.132"
-serde_derive = "1.0.132"
-thiserror = "1.0.30"
-base64 = "0.13.0"
-rpassword = "5.0.1"
-hex = "0.4.3"
-itertools = "0.10.3"
-curve25519-dalek = "3.2.0"
-regex = "1"
-aes = "0.7.5"
-block-modes	= "0.8.1"
-sha2 = "0.10"

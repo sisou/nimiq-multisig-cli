@@ -2,8 +2,6 @@ mod config;
 mod error;
 mod multisig;
 mod private_key;
-mod public_key;
-mod state;
 mod transaction;
 mod utils;
 
@@ -18,7 +16,7 @@ fn main() -> MultiSigResult<()> {
     println!();
     println!("✅ Great, everything looks good!");
     println!("📬 According to your input the MultiSig wallet should be located at:");
-    println!("{}", wallet.address()?.to_user_friendly_address());
+    println!("{}", wallet.address().to_user_friendly_address());
     println!();
 
     loop {

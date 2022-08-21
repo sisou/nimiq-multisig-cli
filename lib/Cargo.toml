@@ -1,0 +1,15 @@
+[package]
+name = "multisig-lib"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
+nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
+nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1", features = ["key-rng", "merkle"] }
+nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
+beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
+itertools = "0.10.3"
+curve25519-dalek = "3.2.0"

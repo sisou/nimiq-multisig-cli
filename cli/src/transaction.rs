@@ -4,26 +4,24 @@ use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
 use hex;
 use hex::FromHex;
+use multisig_lib::transaction::{
+    aggregate_commitment, aggregate_public_keys, finalize_transaction, SignerCommitmentList,
+};
 use nimiq_hash::pbkdf2::compute_pbkdf2_sha512;
-use nimiq_hash::Blake2bHasher;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature, RandomSecret};
 use nimiq_keys::{Address, PublicKey};
 use nimiq_primitives::networks::NetworkId;
-use nimiq_transaction::{SignatureProof, Transaction, TransactionFormat};
+use nimiq_transaction::{Transaction, TransactionFormat};
 use nimiq_utils::key_rng::{RngCore, SecureGenerate, SecureRng};
-use nimiq_utils::merkle::Blake2bMerklePath;
 use std::convert::TryFrom;
 use std::io;
 use std::io::Write;
 
-use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
-use sha2::{Digest, Sha512};
 
 use crate::config::{CommitmentList, State};
 use crate::error::{MultiSigError, MultiSigResult};
 use crate::multisig::MultiSig;
-use crate::public_key::DelinearizedPublicKey;
 use crate::utils::{read_bool, read_coin, read_line, read_usize};
 
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
@@ -53,7 +51,7 @@ pub fn create_transaction(wallet: &MultiSig) -> MultiSigResult<Transaction> {
     let validity_start_height = read_usize()?;
 
     let tx = Transaction::new_basic(
-        wallet.address()?,
+        wallet.address(),
         recipient_address,
         value,
         fee,
@@ -191,7 +189,7 @@ impl CliSigningProcess {
         println!();
         println!("✅ Finishing transaction.");
 
-        let transaction = self.process.finalize_transaction(wallet)?;
+        let transaction = self.process.sign_transaction(wallet)?;
 
         println!("  Here's the fully signed transaction:");
         println!("{}", hex::encode(transaction.serialize_to_vec()));
@@ -435,11 +433,6 @@ pub struct SigningProcess {
     partial_signatures: Vec<PartialSignature>,
 }
 
-pub struct SignerCommitmentList {
-    pub public_key: PublicKey,
-    pub commitment_list: Vec<Commitment>,
-}
-
 impl SigningProcess {
     pub fn new(own_public_key: PublicKey, num_signers: usize) -> Self {
         let mut own_commitment_pairs = vec![];
@@ -510,8 +503,6 @@ impl SigningProcess {
 
         let (aggregated_commitment, b) = self.aggregated_commitment()?;
 
-        let aggregated_public_key = self.aggregated_public_key();
-
         let data = self
             .transaction
             .as_ref()
@@ -521,7 +512,6 @@ impl SigningProcess {
         let partial_signature = wallet.partially_sign(
             &public_keys.clone(),
             &aggregated_commitment.clone(),
-            &aggregated_public_key.clone(),
             b.clone(),
             &self.own_commitment_pairs.clone(),
             &data.clone(),
@@ -549,56 +539,17 @@ impl SigningProcess {
     // We should calculate delinearized scalars for pre-commitments
     // b = H(aggregated_public_key|(R_1, ..., R_v)|m)
     pub fn aggregated_commitment(&self) -> MultiSigResult<(Commitment, Scalar)> {
-        let mut partial_agg_commitments = vec![];
-
-        for i in 0..MUSIG2_PARAMETER_V {
-            partial_agg_commitments.push(*self.own_commitment_pairs[i].commitment());
-        }
-        for i in 0..MUSIG2_PARAMETER_V {
-            for c in self.other_commitment_lists.iter() {
-                let tmp1 = CompressedEdwardsY(partial_agg_commitments[i].to_bytes())
-                    .decompress()
-                    .unwrap();
-                let tmp2 = CompressedEdwardsY(c.commitment_list[i].to_bytes())
-                    .decompress()
-                    .unwrap();
-                partial_agg_commitments[i] = Commitment(tmp1 + tmp2);
-            }
-        }
-
-        //compute hash value b = H(aggregated_public_key|(R_1, ..., R_v)|m)
-        let mut hasher = Sha512::new();
-        hasher.update(self.aggregated_public_key().as_bytes());
-        for i in 0..MUSIG2_PARAMETER_V {
-            let tmp1 = partial_agg_commitments[i].to_bytes();
-            hasher.update(tmp1);
-        }
-
-        let data = self
+        let transaction = self
             .transaction
             .as_ref()
-            .ok_or(MultiSigError::MissingTransaction)?
-            .serialize_content();
-        hasher.update(data);
+            .ok_or(MultiSigError::MissingTransaction)?;
 
-        let hash = hasher.finalize();
-        let b = Scalar::from_bytes_mod_order_wide(&hash.into());
-
-        let mut agg_commitment_edwards = CompressedEdwardsY(partial_agg_commitments[0].to_bytes())
-            .decompress()
-            .unwrap();
-
-        for i in 1..MUSIG2_PARAMETER_V {
-            let mut scale = b;
-            for _j in 1..i {
-                scale *= b;
-            }
-            agg_commitment_edwards += CompressedEdwardsY(partial_agg_commitments[i].to_bytes())
-                .decompress()
-                .unwrap()
-                * scale;
-        }
-        Ok((Commitment(agg_commitment_edwards), b))
+        Ok(aggregate_commitment(
+            &self.other_commitment_lists,
+            &self.own_commitment_pairs,
+            &self.aggregated_public_key(),
+            transaction,
+        ))
     }
 
     pub fn aggregated_public_key(&self) -> PublicKey {
@@ -608,36 +559,29 @@ impl SigningProcess {
             .map(|scl| scl.public_key)
             .collect();
         public_keys.push(self.own_public_key);
-        public_keys.sort();
-        PublicKey::from(DelinearizedPublicKey::sum_delinearized(&public_keys))
+
+        aggregate_public_keys(&public_keys)
     }
 
-    pub fn finalize_transaction(&self, wallet: &MultiSig) -> MultiSigResult<Transaction> {
+    pub fn sign_transaction(&self, wallet: &MultiSig) -> MultiSigResult<Transaction> {
         if self.partial_signatures.len() != self.num_signers {
             return Err(MultiSigError::MissingSignatures);
         }
 
-        let aggregated_signature: PartialSignature = self.partial_signatures.iter().sum();
-        let (aggregated_commitment, _b) = self.aggregated_commitment()?;
-        let signature = aggregated_signature.to_signature(&aggregated_commitment);
-        let public_key = self.aggregated_public_key();
-
-        let signature_proof = SignatureProof {
-            merkle_path: Blake2bMerklePath::new::<Blake2bHasher, _>(
-                &wallet.public_keys()?,
-                &public_key,
-            ),
-            public_key,
-            signature,
-        };
-
-        let mut transaction = self
+        let transaction = self
             .transaction
-            .clone()
+            .as_ref()
             .ok_or(MultiSigError::MissingTransaction)?;
-        transaction.proof = signature_proof.serialize_to_vec();
 
-        Ok(transaction)
+        let (aggregated_commitment, _b) = self.aggregated_commitment()?;
+
+        Ok(finalize_transaction(
+            transaction.clone(),
+            &self.partial_signatures,
+            &aggregated_commitment,
+            self.aggregated_public_key(),
+            &wallet.public_keys(),
+        ))
     }
 }
 
