@@ -537,7 +537,7 @@ impl SigningProcess {
 
         for i in 1..MUSIG2_PARAMETER_V {
             let mut scale = b;
-            for _j in 0..i {
+            for _j in 1..i {
                 scale *= b;
             }
             agg_commitment_edwards += CompressedEdwardsY(partial_agg_commitments[i].to_bytes())

@@ -119,7 +119,7 @@ fn it_can_sign_a_valid_transaction() {
 
     for i in 1..MUSIG2_PARAMETER_V {
         let mut scale = b;
-        for _j in 0..i {
+        for _j in 1..i {
             scale *= b;
         }
         agg_commitment_edwards += CompressedEdwardsY(partial_agg_commitments[i].to_bytes())
@@ -165,7 +165,7 @@ fn it_can_sign_a_valid_transaction() {
 
     for i in 1..MUSIG2_PARAMETER_V {
         let mut scale = b;
-        for _j in 0..i {
+        for _j in 1..i {
             scale *= b;
         }
         agg_commitment_edwards += CompressedEdwardsY(partial_agg_commitments[i].to_bytes())

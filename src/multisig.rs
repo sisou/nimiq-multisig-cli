@@ -12,12 +12,12 @@ use crate::config::Config;
 use crate::error::*;
 use crate::private_key::Secret;
 use crate::public_key::DelinearizedPublicKey;
+use crate::transaction::MUSIG2_PARAMETER_V;
 use crate::utils::{read_bool, read_line, read_usize};
 
 use curve25519_dalek::scalar::Scalar;
 use sha2::{Digest, Sha512};
 
-static MUSIG2_PARAMETER_V: usize = 2; // Parameter used in Musig2
 pub struct MultiSig {
     pub secret: Vec<u8>,
     pub private_key: PrivateKey,
@@ -219,13 +219,13 @@ impl MultiSig {
             private: self.private_key.clone(),
         };
 
-        // Note that here we delinearize as p^{H(H(pks), p)}, e.g., with an additioal hash due to the function delinearize_private_key
+        // Note that here we delinearize as p^{H(H(pks), p)}, e.g., with an additional hash due to the function delinearize_private_key
         let delinearized_private_key: Scalar = own_kp.delinearize_private_key(&public_keys_hash);
 
-        // Compute c = H(apk, R, m)
+        // Compute c = H(R, apk, m)
         let mut hasher = Sha512::new();
-        hasher.update(aggregated_public_key.as_bytes());
         hasher.update(aggregated_commitment.to_bytes());
+        hasher.update(aggregated_public_key.as_bytes());
         hasher.update(data);
 
         let hash = hasher.finalize();
@@ -234,9 +234,9 @@ impl MultiSig {
         // Compute partial signatures
         // s_j = \sk_j \cdot c \cdot a_j + \sum_{k=1}^{MUSIG2_PARAMETER_V} r_{j,k}\cdot b^{k-1}
         let mut secret = (*own_commitment_list[0].random_secret()).0;
-        for i in 0..MUSIG2_PARAMETER_V {
+        for i in 1..MUSIG2_PARAMETER_V {
             let mut scale = b;
-            for _j in 0..i {
+            for _j in 1..i {
                 scale *= b;
             }
             secret += (*own_commitment_list[i].random_secret()).0 * scale;
