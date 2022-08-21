@@ -1,6 +1,6 @@
 use curve25519_dalek::scalar::Scalar;
 use itertools::Itertools;
-use nimiq_hash::{Blake2bHasher, Sha512Hasher, Hasher};
+use nimiq_hash::{Blake2bHasher, Hasher, Sha512Hasher};
 use nimiq_keys::multisig::{hash_public_keys, Commitment, CommitmentPair, PartialSignature};
 use nimiq_keys::{Address, KeyPair, PublicKey};
 use nimiq_utils::merkle::compute_root_from_content;
@@ -62,6 +62,6 @@ pub fn partially_sign(
     }
 
     let partial_signature_scalar: Scalar = c * delinearized_private_key + secret;
-    let partial_signature = PartialSignature(partial_signature_scalar);
+    let partial_signature = PartialSignature::from(partial_signature_scalar.as_bytes());
     partial_signature
 }

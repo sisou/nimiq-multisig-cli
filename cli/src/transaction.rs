@@ -5,7 +5,8 @@ use block_modes::{BlockMode, Cbc};
 use hex;
 use hex::FromHex;
 use multisig_lib::transaction::{
-    aggregate_commitment, aggregate_public_keys, finalize_transaction, SignerCommitmentList,
+    aggregate_commitment, aggregate_public_keys, finalize_transaction, SignerCommitments,
+    MUSIG2_PARAMETER_V,
 };
 use nimiq_hash::pbkdf2::compute_pbkdf2_sha512;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature, RandomSecret};
@@ -25,8 +26,6 @@ use crate::multisig::MultiSig;
 use crate::utils::{read_bool, read_coin, read_line, read_usize};
 
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
-
-pub static MUSIG2_PARAMETER_V: usize = 2; // Parameter used in Musig2
 
 pub fn create_transaction(wallet: &MultiSig) -> MultiSigResult<Transaction> {
     println!("🙈 This step currently only supports basic transactions on the main network.");
@@ -249,11 +248,10 @@ impl CliSigningProcess {
                 collected_commitment_list.push(commitment);
             }
 
-            self.process
-                .add_other_commitment_list(SignerCommitmentList {
-                    public_key: pk,
-                    commitment_list: collected_commitment_list,
-                })?;
+            self.process.add_other_commitment_list(SignerCommitments {
+                public_key: pk,
+                commitments: collected_commitment_list,
+            })?;
 
             // Save state.
             self.save()?;
@@ -365,10 +363,10 @@ impl CliSigningProcess {
     }
 
     pub fn from_state(state: &State, password: &[u8], filename: String) -> MultiSigResult<Self> {
-        let mut commitment_list: Vec<SignerCommitmentList> = state
+        let mut commitment_list: Vec<SignerCommitments> = state
             .commitment_list
             .iter()
-            .map(SignerCommitmentList::try_from)
+            .map(SignerCommitments::try_from)
             .collect::<Result<_, _>>()?;
 
         // let own_commitment_pair = commitments.pop().ok_or(MultiSigError::MissingCommitments)?;
@@ -385,7 +383,7 @@ impl CliSigningProcess {
             secret_bytes.copy_from_slice(&random_secret);
             let random_secret = RandomSecret::from(secret_bytes);
             let own_commitment =
-                CommitmentPair::new(&random_secret, &own_commitment_pair_list.commitment_list[i]);
+                CommitmentPair::new(&random_secret, &own_commitment_pair_list.commitments[i]);
             own_commitment_list.push(own_commitment);
 
             encrypted_secret_list.push(state.secret_list[i].clone());
@@ -427,7 +425,7 @@ pub struct SigningProcess {
     own_public_key: PublicKey,
 
     own_commitment_pairs: Vec<CommitmentPair>,
-    other_commitment_lists: Vec<SignerCommitmentList>,
+    other_commitment_lists: Vec<SignerCommitments>,
 
     transaction: Option<Transaction>,
     partial_signatures: Vec<PartialSignature>,
@@ -450,10 +448,11 @@ impl SigningProcess {
         }
     }
 
-    pub fn own_commitment_list(&self) -> SignerCommitmentList {
-        SignerCommitmentList {
+    #[allow(dead_code)]
+    pub fn own_commitment_list(&self) -> SignerCommitments {
+        SignerCommitments {
             public_key: self.own_public_key,
-            commitment_list: self
+            commitments: self
                 .own_commitment_pairs
                 .iter()
                 .map(|pair| *pair.commitment())
@@ -463,7 +462,7 @@ impl SigningProcess {
 
     pub fn add_other_commitment_list(
         &mut self,
-        commitment_list: SignerCommitmentList,
+        commitment_list: SignerCommitments,
     ) -> MultiSigResult<&mut Self> {
         if self.other_commitment_lists.len() >= self.num_signers - 1 {
             return Err(MultiSigError::NoMoreSigners);
@@ -629,10 +628,10 @@ impl<'a> From<&'a CliSigningProcess> for State {
     }
 }
 
-impl<'a> From<&'a SignerCommitmentList> for CommitmentList {
-    fn from(c: &'a SignerCommitmentList) -> Self {
+impl<'a> From<&'a SignerCommitments> for CommitmentList {
+    fn from(c: &'a SignerCommitments) -> Self {
         let mut commitment_list_str = vec![];
-        for cm in c.commitment_list.iter() {
+        for cm in c.commitments.iter() {
             commitment_list_str.push(hex::encode(cm.to_bytes()));
         }
         CommitmentList {
@@ -642,7 +641,7 @@ impl<'a> From<&'a SignerCommitmentList> for CommitmentList {
     }
 }
 
-impl<'a> TryFrom<&'a CommitmentList> for SignerCommitmentList {
+impl<'a> TryFrom<&'a CommitmentList> for SignerCommitments {
     type Error = MultiSigError;
 
     fn try_from(c: &'a CommitmentList) -> MultiSigResult<Self> {
@@ -653,9 +652,9 @@ impl<'a> TryFrom<&'a CommitmentList> for SignerCommitmentList {
             commitment_list_signer.push(Commitment::from(commitment));
         }
 
-        Ok(SignerCommitmentList {
+        Ok(SignerCommitments {
             public_key: PublicKey::from_hex(&c.public_key)?,
-            commitment_list: commitment_list_signer,
+            commitments: commitment_list_signer,
         })
     }
 }

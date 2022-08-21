@@ -1,5 +1,5 @@
 use beserial::Serialize;
-use nimiq_hash::{Blake2bHasher, Sha512Hasher, Hasher};
+use nimiq_hash::{Blake2bHasher, Hasher, Sha512Hasher};
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature};
 use nimiq_keys::PublicKey;
 use nimiq_transaction::{SignatureProof, Transaction};
@@ -10,11 +10,11 @@ use curve25519_dalek::scalar::Scalar;
 
 use crate::public_key::DelinearizedPublicKey;
 
-pub static MUSIG2_PARAMETER_V: usize = 2; // Parameter used in Musig2
+pub const MUSIG2_PARAMETER_V: usize = 2; // Parameter used in Musig2
 
-pub struct SignerCommitmentList {
+pub struct SignerCommitments {
     pub public_key: PublicKey,
-    pub commitment_list: Vec<Commitment>,
+    pub commitments: Vec<Commitment>,
 }
 
 pub fn aggregate_public_keys(public_keys: &Vec<PublicKey>) -> PublicKey {
@@ -24,7 +24,7 @@ pub fn aggregate_public_keys(public_keys: &Vec<PublicKey>) -> PublicKey {
 // We should calculate delinearized scalars for pre-commitments
 // b = H(aggregated_public_key|(R_1, ..., R_v)|m)
 pub fn aggregate_commitment(
-    other_commitment_lists: &Vec<SignerCommitmentList>,
+    other_commitments: &Vec<SignerCommitments>,
     own_commitment_pairs: &Vec<CommitmentPair>,
     aggregated_public_key: &PublicKey,
     transaction: &Transaction,
@@ -35,11 +35,11 @@ pub fn aggregate_commitment(
         partial_agg_commitments.push(*own_commitment_pairs[i].commitment());
     }
     for i in 0..MUSIG2_PARAMETER_V {
-        for c in other_commitment_lists.iter() {
+        for c in other_commitments.iter() {
             let tmp1 = CompressedEdwardsY(partial_agg_commitments[i].to_bytes())
                 .decompress()
                 .unwrap();
-            let tmp2 = CompressedEdwardsY(c.commitment_list[i].to_bytes())
+            let tmp2 = CompressedEdwardsY(c.commitments[i].to_bytes())
                 .decompress()
                 .unwrap();
             partial_agg_commitments[i] = Commitment(tmp1 + tmp2);

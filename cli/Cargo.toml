@@ -9,12 +9,12 @@ edition = "2021"
 multisig-lib = { path = "../lib" }
 image = "0.23.14"
 quircs = "0.10.0"
-beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1", features = ["key-rng", "merkle"] }
-nimiq-primitives = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1", features = ["coin", "networks"] }
-nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
+beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
+nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
+nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
+nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix", features = ["key-rng", "merkle"] }
+nimiq-primitives = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix", features = ["coin", "networks"] }
+nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
 toml = "0.5.8"
 serde = "1.0.132"
 serde_derive = "1.0.132"

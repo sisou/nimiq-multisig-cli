@@ -6,10 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1", features = ["key-rng", "merkle"] }
-nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
-beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "WZP321-patch-1" }
+nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
+nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
+nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix", features = ["key-rng", "merkle"] }
+nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
+beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
 itertools = "0.10.3"
 curve25519-dalek = "3.2.0"
+
+# For WASM compatibility
+getrandom = { version = "0.2", features = ["js"], optional = true }
+
+[features]
+wasm = [ 'getrandom' ]
