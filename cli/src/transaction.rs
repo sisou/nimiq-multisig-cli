@@ -509,11 +509,11 @@ impl SigningProcess {
             .serialize_content();
 
         let partial_signature = wallet.partially_sign(
-            &public_keys.clone(),
-            &aggregated_commitment.clone(),
+            &public_keys,
+            &aggregated_commitment,
             b.clone(),
-            &self.own_commitment_pairs.clone(),
-            &data.clone(),
+            &self.own_commitment_pairs,
+            &data,
         );
 
         self.partial_signatures.push(partial_signature);
