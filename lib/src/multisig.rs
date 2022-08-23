@@ -1,3 +1,5 @@
+use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
+use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 use itertools::Itertools;
 use nimiq_hash::{Blake2bHasher, Hasher, Sha512Hasher};
@@ -34,10 +36,9 @@ pub fn partially_sign(
 ) -> PartialSignature {
     // Hash public keys.
     let public_keys_hash = hash_public_keys(&public_keys);
-
     // And delinearize them.
     // Note that here we delinearize as p^{H(H(pks), p)}, e.g., with an additional hash due to the function delinearize_private_key
-    let delinearized_private_key: Scalar = key_pair.delinearize_private_key(&public_keys_hash);
+    let delinearized_private_key = key_pair.delinearize_private_key(&public_keys_hash);
 
     let aggregated_public_key = aggregate_public_keys(&public_keys.to_vec());
 
@@ -64,4 +65,49 @@ pub fn partially_sign(
     let partial_signature_scalar: Scalar = c * delinearized_private_key + secret;
     let partial_signature = PartialSignature::from(partial_signature_scalar.as_bytes());
     partial_signature
+}
+
+pub fn verify_partial_signature(
+    public_keys: &[PublicKey],
+    aggregated_commitment: &Commitment,
+    b: Scalar,
+    signer_public_key: &PublicKey,
+    signer_commitments: &[Commitment],
+    partial_signature: &PartialSignature,
+    data: &[u8],
+) -> bool {
+    let public_keys_hash = hash_public_keys(&public_keys);
+    let delinearized_public_key = signer_public_key.delinearize(&public_keys_hash); // pk_i^a_i
+
+    let aggregated_public_key = aggregate_public_keys(&public_keys.to_vec());
+
+    // Compute c = H(R, apk, m)
+    let mut hasher = Sha512Hasher::new();
+    hasher.hash(&aggregated_commitment.to_bytes());
+    hasher.hash(aggregated_public_key.as_bytes());
+    hasher.hash(&data);
+    let hash = hasher.finish();
+    let c = Scalar::from_bytes_mod_order_wide(&hash.into());
+
+    // product over k=1..v R_{i,k}^(b^(k-1))
+    let mut commitment = CompressedEdwardsY(signer_commitments[0].to_bytes())
+        .decompress()
+        .unwrap();
+
+    for i in 1..MUSIG2_PARAMETER_V {
+        let mut scale = b;
+        for _j in 1..i {
+            scale *= b;
+        }
+        commitment += CompressedEdwardsY(signer_commitments[i].to_bytes())
+            .decompress()
+            .unwrap()
+            * scale;
+    }
+
+    let p1 = &partial_signature.0 * &ED25519_BASEPOINT_TABLE;
+    // c * delinearized_public_key = pk_i^(a_i*c)
+    let p2 = c * delinearized_public_key + commitment;
+
+    p1 == p2
 }

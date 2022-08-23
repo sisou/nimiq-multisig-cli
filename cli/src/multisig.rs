@@ -5,7 +5,9 @@ use nimiq_keys::{Address, KeyPair, PrivateKey, PublicKey};
 use std::io;
 use std::io::Write;
 
-use multisig_lib::multisig::{combine_public_keys, compute_address, partially_sign};
+use multisig_lib::multisig::{
+    combine_public_keys, compute_address, partially_sign, verify_partial_signature,
+};
 
 use crate::config::Config;
 use crate::error::*;
@@ -189,14 +191,30 @@ impl MultiSig {
             private: self.private_key.clone(),
         };
 
-        partially_sign(
+        let partial_signature = partially_sign(
             public_keys,
             aggregated_commitment,
             b,
             own_commitment_pairs,
             key_pair,
             data,
-        )
+        );
+
+        assert!(verify_partial_signature(
+            public_keys,
+            aggregated_commitment,
+            b,
+            &self.public_key(),
+            own_commitment_pairs
+                .iter()
+                .map(|pair| *pair.commitment())
+                .collect::<Vec<Commitment>>()
+                .as_slice(),
+            &partial_signature,
+            data
+        ));
+
+        partial_signature
     }
 }
 

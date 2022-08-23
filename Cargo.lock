@@ -244,7 +244,7 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 [[package]]
 name = "beserial"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial_derive",
  "byteorder",
@@ -255,7 +255,7 @@ dependencies = [
 [[package]]
 name = "beserial_derive"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -806,7 +806,7 @@ dependencies = [
 [[package]]
 name = "nimiq-bls"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
@@ -830,7 +830,7 @@ dependencies = [
 [[package]]
 name = "nimiq-collections"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial",
  "itertools",
@@ -841,7 +841,7 @@ dependencies = [
 [[package]]
 name = "nimiq-hash"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial",
  "blake2-rfc",
@@ -857,7 +857,7 @@ dependencies = [
 [[package]]
 name = "nimiq-keys"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial",
  "curve25519-dalek",
@@ -877,7 +877,7 @@ dependencies = [
 [[package]]
 name = "nimiq-macros"
 version = "0.1.1"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "hex",
 ]
@@ -885,12 +885,12 @@ dependencies = [
 [[package]]
 name = "nimiq-mmr"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 
 [[package]]
 name = "nimiq-primitives"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial",
  "bitvec",
@@ -909,7 +909,7 @@ dependencies = [
 [[package]]
 name = "nimiq-transaction"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial",
  "bitflags",
@@ -928,7 +928,7 @@ dependencies = [
 [[package]]
 name = "nimiq-utils"
 version = "0.1.0"
-source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#72ef5b148208f0fd2f3d4d60f5a73eacc81cc842"
+source = "git+https://github.com/nimiq/core-rs-albatross?branch=sisou/wasm-quickfix#0ac81554d235743e14a4b766e1079c42f96d474f"
 dependencies = [
  "beserial",
  "futures-util",
