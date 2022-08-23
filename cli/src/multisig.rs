@@ -203,7 +203,9 @@ impl MultiSig {
         assert!(verify_partial_signature(
             public_keys,
             aggregated_commitment,
+            b,
             &self.public_key(),
+            own_commitment_pairs.iter().map(|pair| *pair.commitment()).collect(),
             &partial_signature,
             data
         ));
