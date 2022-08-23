@@ -67,7 +67,7 @@ pub fn partially_sign(
     partial_signature
 }
 
-pub fn verify_partial_signature(
+pub fn partially_verify(
     public_keys: &[PublicKey],
     aggregated_commitment: &Commitment,
     b: Scalar,

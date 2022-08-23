@@ -6,7 +6,7 @@ use std::io;
 use std::io::Write;
 
 use multisig_lib::multisig::{
-    combine_public_keys, compute_address, partially_sign, verify_partial_signature,
+    combine_public_keys, compute_address, partially_sign, partially_verify,
 };
 
 use crate::config::Config;
@@ -200,7 +200,7 @@ impl MultiSig {
             data,
         );
 
-        assert!(verify_partial_signature(
+        assert!(partially_verify(
             public_keys,
             aggregated_commitment,
             b,
