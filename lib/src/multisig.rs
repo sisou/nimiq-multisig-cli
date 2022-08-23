@@ -71,13 +71,13 @@ pub fn verify_partial_signature(
     public_keys: &[PublicKey],
     aggregated_commitment: &Commitment,
     b: Scalar,
-    public_key: &PublicKey,
-    commitments: Vec<Commitment>,
+    signer_public_key: &PublicKey,
+    signer_commitments: &[Commitment],
     partial_signature: &PartialSignature,
     data: &[u8],
 ) -> bool {
     let public_keys_hash = hash_public_keys(&public_keys);
-    let delinearized_public_key = public_key.delinearize(&public_keys_hash); // pk_i^a_i
+    let delinearized_public_key = signer_public_key.delinearize(&public_keys_hash); // pk_i^a_i
 
     let aggregated_public_key = aggregate_public_keys(&public_keys.to_vec());
 
@@ -88,10 +88,9 @@ pub fn verify_partial_signature(
     hasher.hash(&data);
     let hash = hasher.finish();
     let c = Scalar::from_bytes_mod_order_wide(&hash.into());
-    let p2a = c * delinearized_public_key; // pk_i^(a_i*c)
-    
+
     // product over k=1..v R_{i,k}^(b^(k-1))
-    let mut p2b = CompressedEdwardsY(commitments[0].to_bytes())
+    let mut commitment = CompressedEdwardsY(signer_commitments[0].to_bytes())
         .decompress()
         .unwrap();
 
@@ -100,14 +99,15 @@ pub fn verify_partial_signature(
         for _j in 1..i {
             scale *= b;
         }
-        p2b += CompressedEdwardsY(commitments[i].to_bytes())
+        commitment += CompressedEdwardsY(signer_commitments[i].to_bytes())
             .decompress()
             .unwrap()
             * scale;
     }
 
     let p1 = &partial_signature.0 * &ED25519_BASEPOINT_TABLE;
-    let p2 = p2a + p2b; 
+    // c * delinearized_public_key = pk_i^(a_i*c)
+    let p2 = c * delinearized_public_key + commitment;
 
     p1 == p2
 }

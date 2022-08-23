@@ -205,7 +205,11 @@ impl MultiSig {
             aggregated_commitment,
             b,
             &self.public_key(),
-            own_commitment_pairs.iter().map(|pair| *pair.commitment()).collect(),
+            own_commitment_pairs
+                .iter()
+                .map(|pair| *pair.commitment())
+                .collect::<Vec<Commitment>>()
+                .as_slice(),
             &partial_signature,
             data
         ));
