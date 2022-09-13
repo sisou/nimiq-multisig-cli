@@ -98,7 +98,7 @@ impl CliSigningProcess {
         println!();
         println!("1️⃣ Step 1a: Creating your own commitment.");
 
-        let process = SigningProcess::new(wallet.public_key(), wallet.num_signers);
+        let process = SigningProcess::new(wallet.public_key(), wallet.num_signers, None);
 
         let mut encrypted_secret_list = vec![];
         for i in 0..MUSIG2_PARAMETER_V {
@@ -432,10 +432,17 @@ pub struct SigningProcess {
 }
 
 impl SigningProcess {
-    pub fn new(own_public_key: PublicKey, num_signers: usize) -> Self {
-        let mut own_commitment_pairs = vec![];
-        for _i in 0..MUSIG2_PARAMETER_V {
-            own_commitment_pairs.push(CommitmentPair::generate_default_csprng());
+    pub fn new(own_public_key: PublicKey, num_signers: usize, commitment_pairs: Option<Vec<CommitmentPair>>) -> Self {
+        let mut own_commitment_pairs;
+
+        match commitment_pairs {
+            Some(pairs) => own_commitment_pairs = pairs,
+            None => {
+                own_commitment_pairs = vec![];
+                for _i in 0..MUSIG2_PARAMETER_V {
+                    own_commitment_pairs.push(CommitmentPair::generate_default_csprng());
+                }
+            },
         }
 
         Self {
