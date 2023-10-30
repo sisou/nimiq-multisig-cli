@@ -2,7 +2,7 @@ use base64;
 
 use beserial::Serialize;
 use hex::{FromHex, ToHex};
-use nimiq_keys::multisig::{CommitmentPair, RandomSecret, Commitment};
+use nimiq_keys::multisig::{Commitment, CommitmentPair, RandomSecret};
 use nimiq_keys::{Address, PublicKey};
 use nimiq_primitives::coin::Coin;
 use nimiq_primitives::networks::NetworkId;
@@ -56,26 +56,74 @@ fn it_can_sign_a_valid_transaction() {
     assert!(address_b.eq(&address_c));
 
     // Signing Processes
-    let mut signing_process_a = SigningProcess::new(public_key_a, multisig_a.num_signers, Some(vec![
-        CommitmentPair::new(
-            &RandomSecret::from(<[u8; 32]>::from_hex("61514436ba3671457a39ab8b89c166a6dbf9dcf2320142412faca62c0e30180e").unwrap()),
-            &Commitment::from(<[u8; 32]>::from_hex("c441e06b23ef64095dd24ba9976e1bd6086dd34f6d2892ec92c8f3a5365e352f").unwrap()),
-        ),
-        CommitmentPair::new(
-            &RandomSecret::from(<[u8; 32]>::from_hex("246a60bacd6be35bc248de42bd8d8035c66766af037859797a3c6c87475fc20a").unwrap()),
-            &Commitment::from(<[u8; 32]>::from_hex("6af6931e2199aa73707d1e2363502af6a637a33ddc9464b5a60dab9c5535240d").unwrap()),
-        ),
-    ]));
-    let mut signing_process_b = SigningProcess::new(public_key_b, multisig_b.num_signers, Some(vec![
-        CommitmentPair::new(
-            &RandomSecret::from(<[u8; 32]>::from_hex("1c25176a8d9531dfdabd393e24457ef768b8f91ad1aa5b5c5d531c59d6149306").unwrap()),
-            &Commitment::from(<[u8; 32]>::from_hex("8bcf3923fe74da2c0dae83a0f0a4ad78c3ace4737e1bab09ae839059cc06b75a").unwrap()),
-        ),
-        CommitmentPair::new(
-            &RandomSecret::from(<[u8; 32]>::from_hex("9d372fe33120b7555f06112efa51a179e745ae03cc0942319a0b2a605c680708").unwrap()),
-            &Commitment::from(<[u8; 32]>::from_hex("170b6a773e7f633ef7c3830ebe16a4a7dde24ba4040c18b361b6aa5fad2d0e6f").unwrap()),
-        ),
-    ]));
+    let mut signing_process_a = SigningProcess::new(
+        public_key_a,
+        multisig_a.num_signers,
+        Some(vec![
+            CommitmentPair::new(
+                &RandomSecret::from(
+                    <[u8; 32]>::from_hex(
+                        "61514436ba3671457a39ab8b89c166a6dbf9dcf2320142412faca62c0e30180e",
+                    )
+                    .unwrap(),
+                ),
+                &Commitment::from(
+                    <[u8; 32]>::from_hex(
+                        "c441e06b23ef64095dd24ba9976e1bd6086dd34f6d2892ec92c8f3a5365e352f",
+                    )
+                    .unwrap(),
+                ),
+            ),
+            CommitmentPair::new(
+                &RandomSecret::from(
+                    <[u8; 32]>::from_hex(
+                        "246a60bacd6be35bc248de42bd8d8035c66766af037859797a3c6c87475fc20a",
+                    )
+                    .unwrap(),
+                ),
+                &Commitment::from(
+                    <[u8; 32]>::from_hex(
+                        "6af6931e2199aa73707d1e2363502af6a637a33ddc9464b5a60dab9c5535240d",
+                    )
+                    .unwrap(),
+                ),
+            ),
+        ]),
+    );
+    let mut signing_process_b = SigningProcess::new(
+        public_key_b,
+        multisig_b.num_signers,
+        Some(vec![
+            CommitmentPair::new(
+                &RandomSecret::from(
+                    <[u8; 32]>::from_hex(
+                        "1c25176a8d9531dfdabd393e24457ef768b8f91ad1aa5b5c5d531c59d6149306",
+                    )
+                    .unwrap(),
+                ),
+                &Commitment::from(
+                    <[u8; 32]>::from_hex(
+                        "8bcf3923fe74da2c0dae83a0f0a4ad78c3ace4737e1bab09ae839059cc06b75a",
+                    )
+                    .unwrap(),
+                ),
+            ),
+            CommitmentPair::new(
+                &RandomSecret::from(
+                    <[u8; 32]>::from_hex(
+                        "9d372fe33120b7555f06112efa51a179e745ae03cc0942319a0b2a605c680708",
+                    )
+                    .unwrap(),
+                ),
+                &Commitment::from(
+                    <[u8; 32]>::from_hex(
+                        "170b6a773e7f633ef7c3830ebe16a4a7dde24ba4040c18b361b6aa5fad2d0e6f",
+                    )
+                    .unwrap(),
+                ),
+            ),
+        ]),
+    );
 
     // Exchange commitment lists
     signing_process_a

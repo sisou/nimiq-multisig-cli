@@ -432,7 +432,11 @@ pub struct SigningProcess {
 }
 
 impl SigningProcess {
-    pub fn new(own_public_key: PublicKey, num_signers: usize, commitment_pairs: Option<Vec<CommitmentPair>>) -> Self {
+    pub fn new(
+        own_public_key: PublicKey,
+        num_signers: usize,
+        commitment_pairs: Option<Vec<CommitmentPair>>,
+    ) -> Self {
         let mut own_commitment_pairs;
 
         match commitment_pairs {
@@ -442,7 +446,7 @@ impl SigningProcess {
                 for _i in 0..MUSIG2_PARAMETER_V {
                     own_commitment_pairs.push(CommitmentPair::generate_default_csprng());
                 }
-            },
+            }
         }
 
         Self {
