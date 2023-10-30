@@ -2,7 +2,7 @@ use aes::Aes256;
 use beserial::{Deserialize, Serialize};
 use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
-use hex;
+
 use hex::FromHex;
 use multisig_lib::transaction::{
     aggregate_commitment, aggregate_public_keys, finalize_transaction, SignerCommitments,
@@ -238,13 +238,12 @@ impl CliSigningProcess {
                 println!("  Enter the {}/{} commitment:", i + 1, MUSIG2_PARAMETER_V);
                 let commitment_str = read_line()?;
                 let mut commitment = [0u8; Commitment::SIZE];
-                let commitment =
-                    if let Ok(_) = hex::decode_to_slice(&commitment_str, &mut commitment) {
-                        Commitment::from(commitment)
-                    } else {
-                        println!("🤨 Could not parse the commitment. Try again.");
-                        continue;
-                    };
+                let commitment = if hex::decode_to_slice(&commitment_str, &mut commitment).is_ok() {
+                    Commitment::from(commitment)
+                } else {
+                    println!("🤨 Could not parse the commitment. Try again.");
+                    continue;
+                };
                 collected_commitment_list.push(commitment);
             }
 
@@ -340,13 +339,13 @@ impl CliSigningProcess {
             );
             let ps_str = read_line()?;
             let mut partial_signature = [0u8; PartialSignature::SIZE];
-            let partial_signature =
-                if let Ok(_) = hex::decode_to_slice(&ps_str, &mut partial_signature) {
-                    PartialSignature::from(partial_signature)
-                } else {
-                    println!("🤨 This is not a valid partial signature.");
-                    continue;
-                };
+            let partial_signature = if hex::decode_to_slice(&ps_str, &mut partial_signature).is_ok()
+            {
+                PartialSignature::from(partial_signature)
+            } else {
+                println!("🤨 This is not a valid partial signature.");
+                continue;
+            };
 
             // if self.partial_signatures.contains(&partial_signature) {
             //     println!("🤨 Duplicate partial signature, ignoring this one.");
@@ -400,7 +399,7 @@ impl CliSigningProcess {
         if let Some(ref sigs) = state.partial_signatures {
             for sig in sigs {
                 let mut partial_signature = [0u8; PartialSignature::SIZE];
-                hex::decode_to_slice(&sig, &mut partial_signature)?;
+                hex::decode_to_slice(sig, &mut partial_signature)?;
                 partial_signatures.push(PartialSignature::from(partial_signature));
             }
         }
@@ -484,7 +483,7 @@ impl SigningProcess {
     }
 
     pub fn set_transaction(&mut self, transaction: Transaction) -> MultiSigResult<&mut Self> {
-        if self.partial_signatures.len() > 0 {
+        if !self.partial_signatures.is_empty() {
             return Err(MultiSigError::AlreadySigned);
         }
 
@@ -496,7 +495,7 @@ impl SigningProcess {
         &mut self,
         wallet: &MultiSig,
     ) -> MultiSigResult<PartialSignature> {
-        if self.partial_signatures.len() > 0 {
+        if !self.partial_signatures.is_empty() {
             return Err(MultiSigError::AlreadySigned);
         }
 
@@ -522,7 +521,7 @@ impl SigningProcess {
         let partial_signature = wallet.partially_sign(
             &public_keys,
             &aggregated_commitment,
-            b.clone(),
+            b,
             &self.own_commitment_pairs,
             &data,
         );
@@ -535,7 +534,7 @@ impl SigningProcess {
         &mut self,
         partial_signature: PartialSignature,
     ) -> MultiSigResult<&mut Self> {
-        if self.partial_signatures.len() == 0 {
+        if self.partial_signatures.is_empty() {
             return Err(MultiSigError::MissingOwnSignature);
         }
         if self.partial_signatures.len() >= self.num_signers {
@@ -662,7 +661,7 @@ impl<'a> TryFrom<&'a CommitmentList> for SignerCommitments {
         let mut commitment_list_signer = vec![];
         for cm in c.commitment_list.iter() {
             let mut commitment = [0u8; Commitment::SIZE];
-            hex::decode_to_slice(&cm, &mut commitment)?;
+            hex::decode_to_slice(cm, &mut commitment)?;
             commitment_list_signer.push(Commitment::from(commitment));
         }
 
@@ -705,7 +704,7 @@ fn decrypt(ciphertext: String, password: &[u8]) -> MultiSigResult<Vec<u8>> {
 
     let iv = &ciphertext[SALT_LEN..SALT_LEN + IV_LEN];
 
-    let cipher = Aes256Cbc::new_from_slices(&key, &iv)?;
+    let cipher = Aes256Cbc::new_from_slices(&key, iv)?;
     let plaintext = cipher.decrypt_vec(&ciphertext[SALT_LEN + IV_LEN..])?;
 
     Ok(plaintext)

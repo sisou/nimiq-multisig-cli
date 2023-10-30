@@ -10,9 +10,9 @@ use nimiq_utils::merkle::compute_root_from_content;
 use crate::public_key::DelinearizedPublicKey;
 use crate::transaction::{aggregate_public_keys, MUSIG2_PARAMETER_V};
 
-pub fn combine_public_keys(public_keys: &Vec<PublicKey>, num_signers: usize) -> Vec<PublicKey> {
+pub fn combine_public_keys(public_keys: &[PublicKey], num_signers: usize) -> Vec<PublicKey> {
     // Calculate combinations.
-    let combinations = public_keys.into_iter().combinations(num_signers);
+    let combinations = public_keys.iter().combinations(num_signers);
     let mut multisig_keys: Vec<PublicKey> = combinations
         // DelinearizedPublicKey::sum_delinearized sorts the keys internally
         .map(|combination| {
@@ -25,9 +25,9 @@ pub fn combine_public_keys(public_keys: &Vec<PublicKey>, num_signers: usize) -> 
     multisig_keys
 }
 
-pub fn compute_address(combined_public_keys: &Vec<PublicKey>) -> Address {
+pub fn compute_address(combined_public_keys: &[PublicKey]) -> Address {
     // Calculate address.
-    let merkle_root = compute_root_from_content::<Blake2bHasher, _>(&combined_public_keys);
+    let merkle_root = compute_root_from_content::<Blake2bHasher, _>(combined_public_keys);
     Address::from(merkle_root)
 }
 
@@ -40,12 +40,12 @@ pub fn partially_sign(
     data: &[u8],
 ) -> PartialSignature {
     // Hash public keys.
-    let public_keys_hash = hash_public_keys(&public_keys);
+    let public_keys_hash = hash_public_keys(public_keys);
     // And delinearize them.
     // Note that here we delinearize as p^{H(H(pks), p)}, e.g., with an additional hash due to the function delinearize_private_key
     let delinearized_private_key = key_pair.delinearize_private_key(&public_keys_hash);
 
-    let aggregated_public_key = aggregate_public_keys(&public_keys.to_vec());
+    let aggregated_public_key = aggregate_public_keys(public_keys);
 
     // Compute c = H(R, apk, m)
     let mut hasher = Sha512Hasher::new();
@@ -58,13 +58,15 @@ pub fn partially_sign(
 
     // Compute partial signatures
     // s_j = \sk_j \cdot c \cdot a_j + \sum_{k=1}^{MUSIG2_PARAMETER_V} r_{j,k}\cdot b^{k-1}
-    let mut secret = (*own_commitment_pairs[0].random_secret()).0;
+    let mut secret = own_commitment_pairs[0].random_secret().0;
+
+    #[allow(clippy::needless_range_loop)]
     for i in 1..MUSIG2_PARAMETER_V {
         let mut scale = *b;
         for _j in 1..i {
             scale *= b;
         }
-        secret += (*own_commitment_pairs[i].random_secret()).0 * scale;
+        secret += own_commitment_pairs[i].random_secret().0 * scale;
     }
 
     let partial_signature_scalar: Scalar = c * delinearized_private_key + secret;
@@ -81,10 +83,10 @@ pub fn partially_verify(
     partial_signature: &PartialSignature,
     data: &[u8],
 ) -> bool {
-    let public_keys_hash = hash_public_keys(&public_keys);
+    let public_keys_hash = hash_public_keys(public_keys);
     let delinearized_public_key = signer_public_key.delinearize(&public_keys_hash); // pk_i^a_i
 
-    let aggregated_public_key = aggregate_public_keys(&public_keys.to_vec());
+    let aggregated_public_key = aggregate_public_keys(public_keys);
 
     // Compute c = H(R, apk, m)
     let mut hasher = Sha512Hasher::new();
@@ -99,6 +101,7 @@ pub fn partially_verify(
         .decompress()
         .unwrap();
 
+    #[allow(clippy::needless_range_loop)]
     for i in 1..MUSIG2_PARAMETER_V {
         let mut scale = *b;
         for _j in 1..i {

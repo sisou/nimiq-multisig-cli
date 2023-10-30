@@ -1,5 +1,3 @@
-use base64;
-
 use beserial::Serialize;
 use hex::{FromHex, ToHex};
 use nimiq_keys::multisig::{Commitment, CommitmentPair, RandomSecret};
@@ -182,9 +180,8 @@ fn it_can_sign_a_valid_transaction() {
 
     let transaction = signing_process_a.sign_transaction(&multisig_a).unwrap();
 
-    match transaction.verify(transaction.network_id) {
-        Err(error) => println!("Error: {}", error),
-        _ => {}
+    if let Err(error) = transaction.verify(transaction.network_id) {
+        println!("Error: {}", error)
     }
 
     assert!(transaction.verify(transaction.network_id).is_ok());

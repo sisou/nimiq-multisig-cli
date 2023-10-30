@@ -22,7 +22,7 @@ impl DelinearizedPublicKey {
         let s = Scalar::from_bytes_mod_order_wide(&hash.into());
 
         // Should always work, since we come from a valid public key.
-        let p = CompressedEdwardsY(pk_bytes.clone()).decompress().unwrap();
+        let p = CompressedEdwardsY(*pk_bytes).decompress().unwrap();
 
         // Compute H(C||P)*P.
         DelinearizedPublicKey(s * p)

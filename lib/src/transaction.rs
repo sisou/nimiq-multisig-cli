@@ -17,23 +17,26 @@ pub struct SignerCommitments {
     pub commitments: Vec<Commitment>,
 }
 
-pub fn aggregate_public_keys(public_keys: &Vec<PublicKey>) -> PublicKey {
-    PublicKey::from(DelinearizedPublicKey::sum_delinearized(public_keys))
+pub fn aggregate_public_keys(public_keys: &[PublicKey]) -> PublicKey {
+    DelinearizedPublicKey::sum_delinearized(public_keys)
 }
 
 // We should calculate delinearized scalars for pre-commitments
 // b = H(aggregated_public_key|(R_1, ..., R_v)|m)
 pub fn aggregate_commitment(
-    other_commitments: &Vec<SignerCommitments>,
-    own_commitment_pairs: &Vec<CommitmentPair>,
+    other_commitments: &[SignerCommitments],
+    own_commitment_pairs: &[CommitmentPair],
     aggregated_public_key: &PublicKey,
     transaction: &Transaction,
 ) -> (Commitment, Scalar) {
     let mut partial_agg_commitments = vec![];
 
+    #[allow(clippy::needless_range_loop)]
     for i in 0..MUSIG2_PARAMETER_V {
         partial_agg_commitments.push(*own_commitment_pairs[i].commitment());
     }
+
+    #[allow(clippy::needless_range_loop)]
     for i in 0..MUSIG2_PARAMETER_V {
         for c in other_commitments.iter() {
             let tmp1 = CompressedEdwardsY(partial_agg_commitments[i].to_bytes())
@@ -49,6 +52,8 @@ pub fn aggregate_commitment(
     //compute hash value b = H(aggregated_public_key|(R_1, ..., R_v)|m)
     let mut hasher = Sha512Hasher::new();
     hasher.hash(aggregated_public_key.as_bytes());
+
+    #[allow(clippy::needless_range_loop)]
     for i in 0..MUSIG2_PARAMETER_V {
         hasher.hash(&partial_agg_commitments[i].to_bytes());
     }
@@ -63,6 +68,7 @@ pub fn aggregate_commitment(
         .decompress()
         .unwrap();
 
+    #[allow(clippy::needless_range_loop)]
     for i in 1..MUSIG2_PARAMETER_V {
         let mut scale = b;
         for _j in 1..i {
@@ -79,10 +85,10 @@ pub fn aggregate_commitment(
 
 pub fn finalize_transaction(
     transaction: &mut Transaction,
-    partial_signatures: &Vec<PartialSignature>,
+    partial_signatures: &[PartialSignature],
     aggregated_commitment: &Commitment,
     aggregated_public_key: PublicKey,
-    combined_public_keys: &Vec<PublicKey>,
+    combined_public_keys: &[PublicKey],
 ) {
     let aggregated_signature: PartialSignature = partial_signatures.iter().sum();
     let signature = aggregated_signature.to_signature(aggregated_commitment);

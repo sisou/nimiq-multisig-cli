@@ -1,4 +1,3 @@
-use base64;
 use hex::FromHex;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature};
 use nimiq_keys::{Address, KeyPair, PrivateKey, PublicKey};
@@ -147,7 +146,7 @@ impl MultiSig {
         let public_keys = config
             .public_keys
             .iter()
-            .map(|pk| PublicKey::from_hex(pk))
+            .map(PublicKey::from_hex)
             .collect::<Result<_, _>>()?;
 
         if config.encrypted_private_key.is_none() {
@@ -187,7 +186,7 @@ impl MultiSig {
     ) -> PartialSignature {
         // And delinearize them.
         let key_pair = KeyPair {
-            public: self.public_key().clone(),
+            public: self.public_key(),
             private: self.private_key.clone(),
         };
 
@@ -243,14 +242,14 @@ fn import_secret_from_access_file(filename: &str) -> MultiSigResult<Vec<u8>> {
     let mut decoder = quircs::Quirc::default();
 
     // Identify all qr codes.
-    let codes = decoder.identify(
+    let mut codes = decoder.identify(
         img_gray.width() as usize,
         img_gray.height() as usize,
         &img_gray,
     );
 
     // Try reading QR codes.
-    for code in codes {
+    if let Some(code) = codes.next() {
         let code = code?;
         let decoded = code.decode()?;
         let payload = std::str::from_utf8(&decoded.payload)?;

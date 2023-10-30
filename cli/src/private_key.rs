@@ -48,7 +48,7 @@ impl Secret {
         let private_key = PrivateKey::from_bytes(&plaintext)?;
         let public_key = PublicKey::from(&private_key);
         let h = Blake2bHasher::default().chain(&public_key).finish();
-        if &h.as_ref()[..Secret::ENCRYPTION_CHECKSUM_SIZE] != &check {
+        if h.as_ref()[..Secret::ENCRYPTION_CHECKSUM_SIZE] != check {
             return Err(MultiSigError::InvalidPrivateKey);
         }
 
@@ -71,7 +71,7 @@ impl Secret {
 
         let plaintext = Secret::legacy_otp(&ciphertext, key, &salt, rounds)?;
         let h = Blake2bHasher::default().digest(&plaintext);
-        if &h.as_ref()[..Secret::ENCRYPTION_CHECKSUM_SIZE] != &check {
+        if h.as_ref()[..Secret::ENCRYPTION_CHECKSUM_SIZE] != check {
             return Err(MultiSigError::InvalidPrivateKey);
         }
 
@@ -94,7 +94,7 @@ impl Secret {
         let mut check = Secret::otp(&ciphertext, key, &salt, rounds)?;
         let payload = check.split_off(Secret::ENCRYPTION_CHECKSUM_SIZE_V3);
         let checksum = Blake2bHasher::default().digest(&payload);
-        if &checksum.as_ref()[..Secret::ENCRYPTION_CHECKSUM_SIZE_V3] != &check {
+        if checksum.as_ref()[..Secret::ENCRYPTION_CHECKSUM_SIZE_V3] != check {
             return Err(MultiSigError::InvalidPrivateKey);
         }
 

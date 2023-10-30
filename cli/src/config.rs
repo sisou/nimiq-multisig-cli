@@ -1,7 +1,6 @@
 use crate::error::MultiSigResult;
 use serde_derive::{Deserialize, Serialize};
 use std::fs;
-use toml;
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
