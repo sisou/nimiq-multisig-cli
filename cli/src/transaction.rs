@@ -574,20 +574,23 @@ impl SigningProcess {
             return Err(MultiSigError::MissingSignatures);
         }
 
-        let transaction = self
+        let mut transaction = self
             .transaction
             .as_ref()
-            .ok_or(MultiSigError::MissingTransaction)?;
+            .ok_or(MultiSigError::MissingTransaction)?
+            .clone();
 
         let (aggregated_commitment, _b) = self.aggregated_commitment()?;
 
-        Ok(finalize_transaction(
-            transaction.clone(),
+        finalize_transaction(
+            &mut transaction,
             &self.partial_signatures,
             &aggregated_commitment,
             self.aggregated_public_key(),
             &wallet.public_keys(),
-        ))
+        );
+
+        Ok(transaction)
     }
 }
 

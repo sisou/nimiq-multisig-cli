@@ -78,12 +78,12 @@ pub fn aggregate_commitment(
 }
 
 pub fn finalize_transaction(
-    mut transaction: Transaction,
+    transaction: &mut Transaction,
     partial_signatures: &Vec<PartialSignature>,
     aggregated_commitment: &Commitment,
     aggregated_public_key: PublicKey,
     combined_public_keys: &Vec<PublicKey>,
-) -> Transaction {
+) {
     let aggregated_signature: PartialSignature = partial_signatures.iter().sum();
     let signature = aggregated_signature.to_signature(aggregated_commitment);
 
@@ -97,5 +97,4 @@ pub fn finalize_transaction(
     };
 
     transaction.proof = signature_proof.serialize_to_vec();
-    transaction
 }

@@ -10,17 +10,22 @@ use nimiq_utils::merkle::compute_root_from_content;
 use crate::public_key::DelinearizedPublicKey;
 use crate::transaction::{aggregate_public_keys, MUSIG2_PARAMETER_V};
 
-pub fn combine_public_keys(public_keys: Vec<PublicKey>, num_signers: usize) -> Vec<PublicKey> {
+pub fn combine_public_keys(public_keys: &Vec<PublicKey>, num_signers: usize) -> Vec<PublicKey> {
     // Calculate combinations.
     let combinations = public_keys.into_iter().combinations(num_signers);
     let mut multisig_keys: Vec<PublicKey> = combinations
-        .map(|combination| DelinearizedPublicKey::sum_delinearized(&combination))
+        // DelinearizedPublicKey::sum_delinearized sorts the keys internally
+        .map(|combination| {
+            DelinearizedPublicKey::sum_delinearized(
+                &combination.into_iter().copied().collect::<Vec<_>>(),
+            )
+        })
         .collect();
     multisig_keys.sort();
     multisig_keys
 }
 
-pub fn compute_address(combined_public_keys: Vec<PublicKey>) -> Address {
+pub fn compute_address(combined_public_keys: &Vec<PublicKey>) -> Address {
     // Calculate address.
     let merkle_root = compute_root_from_content::<Blake2bHasher, _>(&combined_public_keys);
     Address::from(merkle_root)
@@ -29,9 +34,9 @@ pub fn compute_address(combined_public_keys: Vec<PublicKey>) -> Address {
 pub fn partially_sign(
     public_keys: &[PublicKey],
     aggregated_commitment: &Commitment,
-    b: Scalar,
+    b: &Scalar,
     own_commitment_pairs: &[CommitmentPair],
-    key_pair: KeyPair,
+    key_pair: &KeyPair,
     data: &[u8],
 ) -> PartialSignature {
     // Hash public keys.
@@ -55,7 +60,7 @@ pub fn partially_sign(
     // s_j = \sk_j \cdot c \cdot a_j + \sum_{k=1}^{MUSIG2_PARAMETER_V} r_{j,k}\cdot b^{k-1}
     let mut secret = (*own_commitment_pairs[0].random_secret()).0;
     for i in 1..MUSIG2_PARAMETER_V {
-        let mut scale = b;
+        let mut scale = *b;
         for _j in 1..i {
             scale *= b;
         }
@@ -70,7 +75,7 @@ pub fn partially_sign(
 pub fn partially_verify(
     public_keys: &[PublicKey],
     aggregated_commitment: &Commitment,
-    b: Scalar,
+    b: &Scalar,
     signer_public_key: &PublicKey,
     signer_commitments: &[Commitment],
     partial_signature: &PartialSignature,
@@ -95,7 +100,7 @@ pub fn partially_verify(
         .unwrap();
 
     for i in 1..MUSIG2_PARAMETER_V {
-        let mut scale = b;
+        let mut scale = *b;
         for _j in 1..i {
             scale *= b;
         }

@@ -11,7 +11,7 @@ use std::iter::Sum;
 pub struct DelinearizedPublicKey(EdwardsPoint);
 
 impl DelinearizedPublicKey {
-    fn new(public_key: PublicKey, hash: &[u8; 64]) -> Self {
+    fn new(public_key: &PublicKey, hash: &[u8; 64]) -> Self {
         let pk_bytes = public_key.as_bytes();
 
         // Compute H(C||P).
@@ -34,7 +34,7 @@ impl DelinearizedPublicKey {
         let h = hash_public_keys(&public_keys);
         public_keys
             .into_iter()
-            .map(|pk| DelinearizedPublicKey::new(pk, &h))
+            .map(|pk| DelinearizedPublicKey::new(&pk, &h))
             .collect()
     }
 

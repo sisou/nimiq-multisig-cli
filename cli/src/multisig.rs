@@ -169,12 +169,12 @@ impl MultiSig {
         public_keys.push(self.public_key());
         public_keys.sort();
 
-        combine_public_keys(public_keys, self.num_signers)
+        combine_public_keys(&public_keys, self.num_signers)
     }
 
     pub fn address(&self) -> Address {
         let combined_public_keys = self.public_keys();
-        compute_address(combined_public_keys)
+        compute_address(&combined_public_keys)
     }
 
     pub fn partially_sign(
@@ -194,16 +194,16 @@ impl MultiSig {
         let partial_signature = partially_sign(
             public_keys,
             aggregated_commitment,
-            b,
+            &b,
             own_commitment_pairs,
-            key_pair,
+            &key_pair,
             data,
         );
 
         assert!(partially_verify(
             public_keys,
             aggregated_commitment,
-            b,
+            &b,
             &self.public_key(),
             own_commitment_pairs
                 .iter()
