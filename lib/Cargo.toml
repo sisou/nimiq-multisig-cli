@@ -6,12 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix", features = ["key-rng", "merkle"] }
-nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-itertools = "0.10.3"
+nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat", features = ["key-rng", "merkle"] }
+nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+itertools = "0.11.0"
 curve25519-dalek = "3.2.0"
 
 # For WASM compatibility

@@ -7,20 +7,20 @@ edition = "2021"
 
 [dependencies]
 multisig-lib = { path = "../lib" }
-image = "0.23.14"
+image = "0.24.7"
 quircs = "0.10.0"
-beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix", features = ["key-rng", "merkle"] }
-nimiq-primitives = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix", features = ["coin", "networks"] }
-nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "sisou/wasm-quickfix" }
-toml = "0.5.8"
-serde = "1.0.132"
-serde_derive = "1.0.132"
-thiserror = "1.0.30"
-base64 = "0.13.0"
-rpassword = "5.0.1"
+beserial = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+nimiq-keys = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+nimiq-hash = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+nimiq-utils = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat", features = ["key-rng", "merkle"] }
+nimiq-primitives = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat", features = ["coin", "networks"] }
+nimiq-transaction = { git = "https://github.com/nimiq/core-rs-albatross", branch = "pow-tx-compat" }
+toml = "0.8.6"
+serde = "1.0.190"
+serde_derive = "1.0.190"
+thiserror = "1.0.50"
+base64 = "0.13.1"
+rpassword = "7.2.0"
 hex = "0.4.3"
 curve25519-dalek = "3.2.0"
 aes = "0.7.5"
