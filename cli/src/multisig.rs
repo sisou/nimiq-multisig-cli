@@ -1,3 +1,4 @@
+use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use hex::FromHex;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature};
 use nimiq_keys::{Address, KeyPair, PrivateKey, PublicKey};
@@ -136,7 +137,7 @@ impl MultiSig {
         let mut config = Config::from_file(filename)?;
 
         let secret = if let Some(ref secret) = config.encrypted_private_key {
-            base64::decode(secret)?
+            BASE64.decode(secret)?
         } else {
             println!("🔐 It looks like the configuration does not contain your keypair.");
             MultiSig::import_access_file()?
@@ -153,7 +154,7 @@ impl MultiSig {
             println!("🤓 Do you want to store your encrypted private key in the configuration for easier access? yes/[no]");
             let store = read_bool()?;
             if store {
-                config.encrypted_private_key = Some(base64::encode(&secret));
+                config.encrypted_private_key = Some(BASE64.encode(&secret));
                 config.to_file(filename)?;
             }
         }
@@ -220,7 +221,7 @@ impl MultiSig {
 impl<'a> From<&'a MultiSig> for Config {
     fn from(wallet: &'a MultiSig) -> Self {
         Config {
-            encrypted_private_key: Some(base64::encode(&wallet.secret)),
+            encrypted_private_key: Some(BASE64.encode(&wallet.secret)),
             num_signers: wallet.num_signers,
             public_keys: wallet.public_keys.iter().map(|pk| pk.to_hex()).collect(),
         }
@@ -253,7 +254,7 @@ fn import_secret_from_access_file(filename: &str) -> MultiSigResult<Vec<u8>> {
         let code = code?;
         let decoded = code.decode()?;
         let payload = std::str::from_utf8(&decoded.payload)?;
-        let buf = base64::decode(payload)?;
+        let buf = BASE64.decode(payload)?;
 
         return Ok(buf);
     }

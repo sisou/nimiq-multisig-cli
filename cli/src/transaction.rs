@@ -1,7 +1,7 @@
 use aes::Aes256;
-use beserial::{Deserialize, Serialize};
 use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
+use nimiq_hash::nimiq_serde::{Deserialize, Serialize};
 
 use hex::FromHex;
 use multisig_lib::transaction::{

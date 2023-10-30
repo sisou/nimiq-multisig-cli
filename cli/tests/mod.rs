@@ -1,5 +1,6 @@
-use beserial::Serialize;
+use base64::engine::{general_purpose::STANDARD as BASE64, Engine};
 use hex::{FromHex, ToHex};
+use nimiq_hash::nimiq_serde::Serialize;
 use nimiq_keys::multisig::{Commitment, CommitmentPair, RandomSecret};
 use nimiq_keys::{Address, PublicKey};
 use nimiq_primitives::coin::Coin;
@@ -13,18 +14,15 @@ use multisig_tool::transaction::SigningProcess;
 #[test]
 fn it_can_sign_a_valid_transaction() {
     // Wallets
-    let secret_a = base64::decode(
-        "AwhzS1YOu2TBk75SP1lWuiCA2EZ2rn4ZdZKo+uOJjiga6Sp4BSahgD767UWedk3PVD5/f9rTefU=",
-    )
-    .unwrap();
-    let secret_b = base64::decode(
-        "AwhNjyLBAdjqSSQYw8KaFtRnXKpWkCvbujVCSgEmMWUH6SK8izLikv8vO4PWhZ1YQt9t5sLakzg=",
-    )
-    .unwrap();
-    let secret_c = base64::decode(
-        "Awj/jUI4H4SAUKl2VLX1TibjExw+APpRSOAjWsU4nclPGdlzkckpC5F+Ywwgz4A05z3jtNYA304=",
-    )
-    .unwrap();
+    let secret_a = BASE64
+        .decode("AwhzS1YOu2TBk75SP1lWuiCA2EZ2rn4ZdZKo+uOJjiga6Sp4BSahgD767UWedk3PVD5/f9rTefU=")
+        .unwrap();
+    let secret_b = BASE64
+        .decode("AwhNjyLBAdjqSSQYw8KaFtRnXKpWkCvbujVCSgEmMWUH6SK8izLikv8vO4PWhZ1YQt9t5sLakzg=")
+        .unwrap();
+    let secret_c = BASE64
+        .decode("Awj/jUI4H4SAUKl2VLX1TibjExw+APpRSOAjWsU4nclPGdlzkckpC5F+Ywwgz4A05z3jtNYA304=")
+        .unwrap();
 
     let private_key_a =
         Secret::from_encrypted(&mut &*secret_a, String::from("1234567890").as_ref()).unwrap();
@@ -144,7 +142,7 @@ fn it_can_sign_a_valid_transaction() {
 
     assert_eq!(
         transaction.serialize_to_vec().encode_hex::<String>(),
-        "010000f4e305f34ea1ccf00c0f7fcbc030d1347dc5eafe00000000000000000000000000000000000000000000000000000000000a00000000000000000000000001000000",
+        "01f4e305f34ea1ccf00c0f7fcbc030d1347dc5eafe000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000010000",
     );
 
     signing_process_a

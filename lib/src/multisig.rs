@@ -2,7 +2,7 @@ use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 use itertools::Itertools;
-use nimiq_hash::{Blake2bHasher, Hasher, Sha512Hasher};
+use nimiq_hash::{sha512::Sha512Hasher, Blake2bHasher, Hasher};
 use nimiq_keys::multisig::{hash_public_keys, Commitment, CommitmentPair, PartialSignature};
 use nimiq_keys::{Address, KeyPair, PublicKey};
 use nimiq_utils::merkle::compute_root_from_content;
@@ -113,7 +113,7 @@ pub fn partially_verify(
             * scale;
     }
 
-    let p1 = &partial_signature.0 * &ED25519_BASEPOINT_TABLE;
+    let p1 = &partial_signature.0 * ED25519_BASEPOINT_TABLE;
     // c * delinearized_public_key = pk_i^(a_i*c)
     let p2 = c * delinearized_public_key + commitment;
 

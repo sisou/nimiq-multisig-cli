@@ -21,7 +21,7 @@ pub enum MultiSigError {
     #[error("UTF8 Error: {0}")]
     Utf8(#[from] str::Utf8Error),
     #[error("Serializing Error: {0}")]
-    Beserial(#[from] beserial::SerializingError),
+    Beserial(#[from] nimiq_hash::nimiq_serde::DeserializeError),
     #[error("Base64 Error: {0}")]
     Base64(#[from] base64::DecodeError),
     #[error("Argon2 Error: {0}")]

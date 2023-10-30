@@ -1,7 +1,7 @@
 use curve25519_dalek::edwards::{CompressedEdwardsY, EdwardsPoint};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::Identity;
-use nimiq_hash::{Hasher, Sha512Hasher};
+use nimiq_hash::{sha512::Sha512Hasher, Hasher};
 use nimiq_keys::multisig::hash_public_keys;
 use nimiq_keys::PublicKey;
 use std::borrow::Borrow;

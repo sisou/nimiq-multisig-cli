@@ -1,6 +1,7 @@
 use crate::error::{MultiSigError, MultiSigResult};
-use beserial::{ReadBytesExt, SerializingError};
+use byteorder::ReadBytesExt;
 use nimiq_hash::argon2kdf::{compute_argon2_kdf, Argon2Error};
+use nimiq_hash::nimiq_serde::DeserializeError;
 use nimiq_hash::{Blake2bHasher, Hasher};
 use nimiq_keys::{PrivateKey, PublicKey};
 
@@ -26,7 +27,7 @@ impl Secret {
             1 => Secret::decrypt_v1(reader, key, rounds),
             2 => Secret::decrypt_v2(reader, key, rounds),
             3 => Secret::decrypt_v3(reader, key, rounds),
-            _ => Err(SerializingError::InvalidEncoding)?,
+            _ => Err(DeserializeError::bad_encoding())?,
         }
     }
 

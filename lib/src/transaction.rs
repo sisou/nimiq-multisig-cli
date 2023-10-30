@@ -1,5 +1,4 @@
-use beserial::Serialize;
-use nimiq_hash::{Blake2bHasher, Hasher, Sha512Hasher};
+use nimiq_hash::{nimiq_serde::Serialize, sha512::Sha512Hasher, Blake2bHasher, Hasher};
 use nimiq_keys::multisig::{Commitment, CommitmentPair, PartialSignature};
 use nimiq_keys::PublicKey;
 use nimiq_transaction::{SignatureProof, Transaction};
